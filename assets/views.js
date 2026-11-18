@@ -240,7 +240,7 @@
         if(J.wh){
           var combo = J.whr.charAt(0) === "C", mo = J.whr.charAt(0) === "M";
           add(j + "|wh", j, combo ? "Combined payroll tax account" : "Income tax withholding", { forms:J.wh, link:j + "|rev",
-            freq:combo ? "Quarterly combined return; deposits on the state schedule" : mo ? "Monthly return and payment" : w >= .06 ? "Semiweekly deposits; quarterly return" : w >= .015 ? "Monthly deposits; quarterly return" : "Quarterly return and payment",
+            freq:J.dep || (mo ? "Monthly return and payment" : combo ? "Quarterly combined return and payment" : "Quarterly return and payment"),
             rate:combo ? "Unemployment " + sui : "" });
         }
         if(J.ui) add(j + "|ui", j, "Unemployment insurance", { forms:J.ui, freq:"Quarterly wage report and payment", rate:sui, link:j + "|ui" });
@@ -580,14 +580,46 @@
       }));
     }
 
+    /* =====================================================================
+       RULES: state wage and hour matrix, and the global matrix
+       ===================================================================== */
+    var rq = "";
+    function renderRules(){
+      var S = P.RULES.states, G = P.RULES.global, codes = Object.keys(S).sort(function(a, b){ return JUR["US-" + a].name < JUR["US-" + b].name ? -1 : 1; });
+      var rising = codes.filter(function(c){ return S[c].mw27; }).length, sick = codes.filter(function(c){ return /^(1 hour|About|Up to)/.test(S[c].sick); }).length;
+      var fast = codes.filter(function(c){ return /^(imm|nbd|d:1)$/.test(S[c].fd); }).length, daily = codes.filter(function(c){ return /^Daily/.test(S[c].ot); }).length;
+      swap($("ruletiles"), [
+        tile("Minimum wage rising January 1, 2027", rising + " states", "New rates are on the calendar", rising > 0),
+        tile("Final pay due within a day of discharge", fast + " of 51", "States and DC; carried on the termination checklist"),
+        tile("Paid sick leave required", (sick - 1) + " states and DC", "Accrual rates and caps are in the table"),
+        tile("Daily overtime rules", daily + " states", "Beyond the federal 40-hour week")
+      ]);
+      function hit(text){ if(!rq) return true; var w = rq.toLowerCase().split(/\s+/), i, t = text.toLowerCase(); for(i = 0; i < w.length; i++) if(w[i] && t.indexOf(w[i]) < 0) return false; return true; }
+      var rows = codes.filter(function(c){ var r = S[c]; return hit([JUR["US-" + c].name, c, r.mw, r.mw27 || "", r.ot, r.pay, r.fired, r.quit, r.sick].join(" ")); }).map(function(c){
+        var r = S[c], J = JUR["US-" + c];
+        return h("tr", { class:J.office ? "office" : null },
+          h("th", { scope:"row" }, h("span", { class:"abbr", text:c }), h("span", { class:"jn2", text:J.name }), J.office ? h("span", { class:"pill soon sm", text:"Office" }) : null),
+          h("td", null, r.mw, r.mw27 ? h("small", { class:"warnc", text:r.mw27 + " from January 1, 2027" }) : null),
+          td(r.ot), td(r.pay), td(r.fired), td(r.quit), td(r.sick));
+      });
+      swap($("staterules"), rows.length ? rows : [h("tr", null, h("td", { colspan:"7", class:"none", text:"No states match that search." }))]);
+      $("rulecount").textContent = plural(rows.length, "state", "states") + " shown";
+      swap($("globalrules"), Object.keys(G).sort(function(a, b){ return JUR[a].name < JUR[b].name ? -1 : 1; }).map(function(k){
+        var g = G[k];
+        return h("tr", null, h("th", { scope:"row" }, h("span", { class:"abbr", text:JUR[k].abbr }), h("span", { class:"jn2", text:JUR[k].name })),
+          td(g.year), td(g.pay), td(g.mw), td(g.hours), td(g.extra), td(g.leave), td(g.cost), td(g.final));
+      }));
+    }
+
     /* ----- one-time wiring ----- */
+    (function(){ var t = null; $("rulesearch").addEventListener("input", function(){ var v = this.value; clearTimeout(t); t = setTimeout(function(){ rq = v.trim(); renderRules(); }, 140); }); })();
     $("tqcur").addEventListener("click", function(){ tq = "cur"; renderTie(); });
     $("tqprev").addEventListener("click", function(){ tq = "prev"; renderTie(); });
     wireFile();
 
     return {
-      render:[renderRuns, renderTie, renderFile, renderNotices, renderCleanup],
-      reset:function(){ tq = "cur"; ff = { level:"all", q:"", attn:false }; if($("recdlg").open) $("recdlg").close(); },
+      render:[renderRuns, renderTie, renderFile, renderRules, renderNotices, renderCleanup],
+      reset:function(){ tq = "cur"; ff = { level:"all", q:"", attn:false }; rq = ""; $("rulesearch").value = ""; if($("recdlg").open) $("recdlg").close(); },
       portalFor:portalFor
     };
   };

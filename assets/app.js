@@ -165,7 +165,7 @@
   function items(){
     if(cache) return cache;
     var out = P.ITEMS.map(function(it){
-      if(it.payday && P.same(it.payday, NEXT_PAY) && state.steps.deposit !== null){
+      if(it.jur === "US" && it.payday && P.same(it.payday, NEXT_PAY) && state.steps.deposit !== null){
         var c = clone(it);
         c.date = DEP_DUE; c.nominal = DEP_DUE; c.moved = false;
         c.title = "Federal tax deposit: $100,000 next-day rule";
@@ -501,12 +501,16 @@
     render();
   }
   /* ---------- Event clocks: things that are due because something happened, not because of the calendar ---------- */
-  var OFFICE_FINAL = {
-    "US-TX":["Texas", function(d){ return P.prevBiz(P.addDays(d, 6)); }, "Texas: a discharged employee is paid in full within 6 calendar days."],
-    "US-MA":["Massachusetts", function(d){ return d; }, "Massachusetts: a discharged employee is paid in full on the day of discharge."],
-    "US-AZ":["Arizona", function(d){ var a = P.addBiz(d, 7), b = payOnOrAfter(d); return a < b ? a : b; }, "Arizona: a discharged employee is paid within 7 working days or by the end of the next regular pay period, whichever is sooner."],
-    "US-VA":["Virginia", function(d){ return payOnOrAfter(d); }, "Virginia: final wages are due on or before the next regular pay date."]
-  };
+  function finalPayDate(d, code){
+    var next = payOnOrAfter(P.addDays(d, 1)), parts = code.split(":"), x;
+    function span(kind, n){ return kind === "bd" ? P.addBiz(d, n) : P.prevBiz(P.addDays(d, n)); }
+    if(code === "imm") return d;
+    if(code === "nbd") return P.addBiz(d, 1);
+    if(code === "pay" || code === "none") return next;
+    if(parts[0] === "min"){ x = span(parts[1], +parts[2]); return x < next ? x : next; }
+    if(parts[0] === "max"){ x = span(parts[1], +parts[2]); return x > next ? x : next; }
+    return span(parts[0], +parts[1]);
+  }
   function payOnOrAfter(d){ var f = d; while(P.dow(f) !== 5) f = P.addDays(f, 1); return P.prevBiz(f) < d ? P.prevBiz(P.addDays(f, 7)) : P.prevBiz(f); }
   var EVENTS = {
     hire:["A new hire starts", false, function(d){
@@ -517,9 +521,10 @@
       ];
     }],
     term:["An employee is let go", true, function(d, st){
-      var o = OFFICE_FINAL[st];
+      var r = P.RULES.states[JUR[st].abbr], name = JUR[st].name;
       return [
-        [st, "Final paycheck issued", o[1](d), o[0] + " labor agency", "Final wages", o[2] + " The stricter involuntary rule is used.", "Payroll"],
+        [st, "Final paycheck issued", finalPayDate(d, r.fd), name + " labor agency", "Final wages",
+          r.fd === "none" ? name + " has no final-pay statute, so the next regular payday is used." : name + ", when an employee is let go: " + r.fired.charAt(0).toLowerCase() + r.fired.slice(1) + ". The rule for a resignation is: " + r.quit.charAt(0).toLowerCase() + r.quit.slice(1) + ".", "Payroll"],
         ["US", "COBRA election notice sent", P.prevBiz(P.addDays(d, 44)), "Department of Labor", "COBRA election notice", "When the employer administers the plan, the notice goes out within 44 days of the qualifying event.", "HR and Benefits"]
       ];
     }],
@@ -557,7 +562,9 @@
     var dlg = $("recdlg");
     var kind = h("select", { id:"ev-kind" }, Object.keys(EVENTS).map(function(k){ return h("option", { value:k, text:EVENTS[k][0] }); }));
     var date = h("input", { id:"ev-date", type:"date", required:true }); date.value = P.iso(TODAY);
-    var st = h("select", { id:"ev-state" }, Object.keys(OFFICE_FINAL).map(function(k){ return h("option", { value:k, text:OFFICE_FINAL[k][0] }); }));
+    var st = h("select", { id:"ev-state" }, Object.keys(JUR).filter(function(k){ return JUR[k].level === "state"; }).sort(function(x, y){ return JUR[x].name < JUR[y].name ? -1 : 1; })
+      .map(function(k){ return h("option", { value:k, text:JUR[k].name }); }));
+    st.value = "US-TX";
     var stField = h("label", { class:"field", "for":"ev-state", hidden:true }, "Work state", st);
     kind.addEventListener("change", function(){ stField.hidden = !EVENTS[kind.value][1]; });
     swap($("recbody"), [h("form", { class:"recform", onsubmit:function(e){
@@ -748,7 +755,7 @@
   }
 
   /* ---------- Views (one plain #name each) ---------- */
-  var VIEWS = ["deadlines","pay-runs","tie-out","company-file","notices","clean-up","controls","monthly-report","first-90-days"];
+  var VIEWS = ["deadlines","pay-runs","tie-out","company-file","rules","notices","clean-up","controls","monthly-report","first-90-days"];
   function showView(){
     var v = (location.hash || "").replace("#", "");
     if(v === "monitor") v = "controls";

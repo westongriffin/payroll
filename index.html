@@ -270,6 +270,11 @@
   .jh .btn{margin-left:auto;}
   table.wide{min-width:1080px;} table.file{min-width:1160px;}
   #cleanrows td:last-child,#noticerows td:last-child{min-width:250px;}
+  table.rules{min-width:1180px; font-size:14.5px;} table.rules.global{min-width:1500px;}
+  table.rules td{min-width:130px;}
+  table.rules tr.office > *{background:#F7FAFF;}
+  table.rules .abbr{display:inline-block;}
+  .toolbar.slim{margin-top:10px; padding:12px 14px;}
   #runrows td,#runrows th,#intlrows td,#tieruns td,#tieruns th{white-space:nowrap;}
   .checks{margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;}
   .checks li{display:flex; align-items:center; gap:12px; padding:10px 14px; border-top:1px solid #ECEDEE; font-size:15px;}
@@ -414,6 +419,7 @@
       <a class="tab" href="#pay-runs" data-view="pay-runs">Pay runs</a>
       <a class="tab" href="#tie-out" data-view="tie-out">Tie-out</a>
       <a class="tab" href="#company-file" data-view="company-file">Company file</a>
+      <a class="tab" href="#rules" data-view="rules">Rules</a>
       <a class="tab" href="#notices" data-view="notices">Notices</a>
       <a class="tab" href="#clean-up" data-view="clean-up">Clean-up</a>
       <a class="tab" href="#controls" data-view="controls">Controls</a>
@@ -556,6 +562,27 @@
     <p class="after">Account IDs, rates, people and statuses are sample data. Agency addresses were checked in November 2026 and are confirmed again each time an account is verified.</p>
   </section>
 
+  <section class="view" id="view-rules" hidden>
+    <h2>Wage and hour rules</h2>
+    <p class="sub">The rules that change from one state or country to the next, in one place. Final-pay rules feed the termination dates on the calendar, and minimum wage changes appear there on the day they take effect.</p>
+    <div class="tiles gap" id="ruletiles"></div>
+    <h3 class="jh">United States, 50 states and DC <span id="rulecount"></span></h3>
+    <div class="panel toolbar slim">
+      <label class="field">Search <input id="rulesearch" type="search" placeholder="State or rule, for example immediately or semi-monthly" autocomplete="off"></label>
+    </div>
+    <div class="tablewrap"><table class="wide rules">
+      <thead><tr><th scope="col">State</th><th scope="col">Minimum wage</th><th scope="col">Overtime</th><th scope="col">Pay frequency</th><th scope="col">Final pay if let go</th><th scope="col">Final pay if they resign</th><th scope="col">Paid sick leave</th></tr></thead>
+      <tbody id="staterules"></tbody>
+    </table></div>
+    <p class="after">Sources: U.S. Department of Labor state minimum wage table (updated November 5, 2026) and state payday table (January 2023); ADP list of January 1, 2027 increases (November 9, 2026); Nolo final paycheck chart (May 2023); Paycor paid sick leave summary for 2026. Local rules can be stricter. Each rule is confirmed with the state labor office before it is relied on.</p>
+    <h3 class="jh">Global <span>nine sample countries</span></h3>
+    <div class="tablewrap"><table class="wide rules global">
+      <thead><tr><th scope="col">Country</th><th scope="col">Tax year</th><th scope="col">Pay timing</th><th scope="col">Minimum wage</th><th scope="col">Hours and overtime</th><th scope="col">Required extra pay</th><th scope="col">Paid annual leave</th><th scope="col">Employer costs on top of pay</th><th scope="col">Final pay</th></tr></thead>
+      <tbody id="globalrules"></tbody>
+    </table></div>
+    <p class="after">Rates were checked in November 2026. Country rules are a summary for planning and are confirmed with each in-country vendor.</p>
+  </section>
+
   <section class="view" id="view-notices" hidden>
     <h2>Notice log</h2>
     <p class="sub">Every agency notice and garnishment order in one shared log, with an owner and a response date set within one business day. Nothing sits in one person's inbox.</p>
@@ -665,6 +692,7 @@
 
 <script src="assets/deadlines.js"></script>
 <script src="assets/links.js"></script>
+<script src="assets/rules.js"></script>
 <script src="assets/model.js"></script>
 <script src="assets/views.js"></script>
 <script src="assets/app.js"></script>

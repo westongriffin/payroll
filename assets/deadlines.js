@@ -93,6 +93,7 @@
       rule:o.rule || "", note:o.note || "", url:o.url || "", urlLabel:o.urlLabel || "", owner:o.owner || (J.level === "global" ? "Payroll, with the in-country vendor" : OWNER[o.cat])
     };
     if(o.payday) it.payday = o.payday;
+    if(o.range) it.range = o.range;
     OUT.push(it); return it;
   }
   function eachYear(fn){ for(var y = Y0; y <= Y1; y++) fn(y); }
@@ -204,12 +205,12 @@
     AZ:["Arizona","Form A1-QRT","Q","Form UC-018","Q","Form A1-R and W-2s","1-31"],
     AR:["Arkansas","Form AR941M","M15","Form DWS-ARK-209B","Q","Form AR3MAR and W-2s","1-31"],
     CA:["California","Forms DE 9 and DE 9C","C","","","",""],
-    CO:["Colorado","Form DR 1094","Q","Form UITR-1","Q","Form DR 1093 and W-2s","1-31"],
+    CO:["Colorado","Form DR 1094","M15","Form UITR-1","Q","Form DR 1093 and W-2s","1-31"],
     CT:["Connecticut","Form CT-941","Q","Forms UC-2 and UC-5A","Q","Form CT-W3 and W-2s","1-31"],
     DE:["Delaware","Form WTH-TAX","Q","Forms UC-8 and UC-8A","Q","Form WTH-REC and W-2s","1-31"],
     DC:["District of Columbia","Form FR-900Q","Q","Form UC-30","Q","W-2s","1-31"],
     FL:["Florida","","","Form RT-6","Q","",""],
-    GA:["Georgia","Form G-7","Q","Form DOL-4N","Q","Form G-1003 and W-2s","1-31"],
+    GA:["Georgia","Form G-7M","M15","Form DOL-4N","Q","Form G-1003 and W-2s","1-31"],
     HI:["Hawaii","Form HW-14","Q15","Form UC-B6","Q","Form HW-30 and W-2s","1-31"],
     ID:["Idaho","Form 910","Q","Form TAX020","Q","Form 967 and W-2s","1-31"],
     IL:["Illinois","Form IL-941","Q","Form UI-3/40","Q","W-2s","1-31"],
@@ -229,12 +230,12 @@
     NE:["Nebraska","Form 941N","Q","Forms UI 11T and UI 11W","Q","Form W-3N and W-2s","1-31"],
     NV:["Nevada","","","Form NUCS-4072","Q","",""],
     NH:["New Hampshire","","","Form DES 200","Q","",""],
-    NJ:["New Jersey","Forms NJ-927 and WR-30","C30","","","Form NJ-W-3 and W-2s","2-15"],
+    NJ:["New Jersey","Forms NJ-927-W and WR-30","C30","","","Form NJ-W-3 and W-2s","2-15"],
     NM:["New Mexico","Form TRD-41414","M25","Form ES-903A","Q","W-2s","1-31"],
     NY:["New York","Form NYS-45","C","","","",""],
-    NC:["North Carolina","Form NC-5Q","Q","Form NCUI 101","Q","Form NC-3 and W-2s","1-31"],
+    NC:["North Carolina","Form NC-5","M15","Form NCUI 101","Q","Form NC-3 and W-2s","1-31"],
     ND:["North Dakota","Form 306","Q","Form SFN 41263","Q","Form 307 and W-2s","1-31"],
-    OH:["Ohio","Form IT 501","Q","Quarterly wage report (JFS 20125)","Q","Forms IT 941 and IT 3 with W-2s","1-31"],
+    OH:["Ohio","Form IT 501","M15","Quarterly wage report (JFS 20125)","Q","Forms IT 941 and IT 3 with W-2s","1-31"],
     OK:["Oklahoma","Form WTH 10001","Q20","Form OES-3","Q","W-2s","1-31"],
     OR:["Oregon","Form OQ","C","","","Form OR-WR and W-2s","1-31"],
     PA:["Pennsylvania","Form PA-W3","Q","Forms UC-2 and UC-2A","Q","Form REV-1667 and W-2s","1-31"],
@@ -245,7 +246,7 @@
     TX:["Texas","","","Form C-3","Q","",""],
     UT:["Utah","Form TC-941E","Q","Form 33H","Q","Annual reconciliation and W-2s","1-31"],
     VT:["Vermont","Form WHT-436","Q25","Form C-101","Q","Form WHT-434 and W-2s","1-31"],
-    VA:["Virginia","Form VA-5","Q","Forms FC-20 and FC-21","Q","Form VA-6 and W-2s","1-31"],
+    VA:["Virginia","Form VA-16","Q","Forms FC-20 and FC-21","Q","Form VA-6 and W-2s","1-31"],
     WA:["Washington","","","Quarterly unemployment tax and wage report","Q","",""],
     WV:["West Virginia","Form IT-101Q","Q","Form WVUC-A-154","Q","Form IT-103 and W-2s","1-31"],
     WI:["Wisconsin","Form WT-6","Q","Form UCT-101","Q","Form WT-7 and W-2s","1-31"],
@@ -267,11 +268,24 @@
   };
   var OFFICES = { TX:"Headquarters in Plano, office in Dallas", MA:"Office in Boston", VA:"Office in Herndon", AZ:"Office in Phoenix" };
   var FREQ = "Shown at this cadence for the sample profile. The state assigns each employer's deposit frequency from its withholding volume, and the assigned frequency is kept in the account register.";
+  /* States where the sample payroll is large enough that withholding is deposited more often than it is reported.
+     Each rule was checked against the state's own guidance in November 2026. */
+  var STDEP = {
+    AZ:["fed", "Withholding payment on AZTaxes", "Employers above Arizona's quarterly threshold deposit state withholding at the same time as their federal deposit.", "Deposits on the federal semiweekly schedule; quarterly return"],
+    CA:["fed", "Form DE 88 deposit", "California follows the federal deposit schedule. A semiweekly federal depositor with accumulated state income tax above the EDD threshold deposits state income tax and SDI on the federal dates.", "Deposits on the federal semiweekly schedule; quarterly return"],
+    IL:["fed", "Form IL-501 payment", "Semiweekly payers have at least three banking days after the semiweekly period closes, so Wednesday through Friday pay dates are due the following Wednesday.", "Semiweekly deposits; quarterly return"],
+    OR:["fed", "Withholding payment on Frances Online", "Oregon withholding payments are due on the same dates as the federal deposits.", "Deposits on the federal semiweekly schedule; quarterly combined report"],
+    PA:["fed", "Form PA-501 deposit", "Semi-weekly filers, at $5,000 or more a quarter: pay dates on Wednesday, Thursday or Friday are due the following Wednesday, and Saturday through Tuesday pay dates are due the following Friday.", "Semi-weekly deposits; quarterly return"],
+    VA:["fed", "Form VA-15 payment", "Semi-weekly filers pay within three banking days after each federal cutoff date, Tuesday and Friday, when more than $500 has been withheld. A Friday payroll is due the following Wednesday.", "Semi-weekly deposits; quarterly reconciliation"],
+    NY:["ny", "Form NYS-1", "Once withholding reaches $700, Form NYS-1 and the payment are due within three business days after the payroll. Smaller employers have five business days.", "Within 3 business days of each payroll; quarterly return"],
+    NJ:["nj", "Weekly withholding payment by EFT", "Weekly payers, at $10,000 or more of withholding in the prior year, pay by the Wednesday after the week that contains the pay date.", "Weekly deposits, due the following Wednesday; quarterly return"],
+    MA:["ma", "Withholding payment on MassTaxConnect", "Employers above $25,000 a year pay within three business days after the 7th, 15th, 22nd and last day of each month, when $500 or more has been withheld.", "Deposits within 3 business days of the 7th, 15th, 22nd and month-end; quarterly return"]
+  };
 
   Object.keys(ST).forEach(function(c){
     var s = ST[c], j = "US-" + c, ag = AG[c] || [];
     var rev = ag[0] || s[0] + " revenue department", ui = ag[1] || ag[0] || s[0] + " unemployment insurance agency";
-    jur(j, s[0], "state", { abbr:c, wh:s[1], whr:s[2], ui:s[3], office:OFFICES[c] || "", noTax:!s[1] });
+    jur(j, s[0], "state", { abbr:c, wh:s[1], whr:s[2], ui:s[3], office:OFFICES[c] || "", noTax:!s[1], dep:STDEP[c] ? STDEP[c][3] : "" });
     var whr = s[2];
     if(whr.charAt(0) === "C"){
       var cr = whr === "C30" ? "Q30" : "Q";
@@ -280,7 +294,8 @@
       });
     } else if(whr.charAt(0) === "Q"){
       eachQuarter(function(y, q, p){
-        put(j, "wh", "State income tax withholding return", qDue(y, q, whr), "next", { cat:"return", form:s[1], agency:rev, period:p, rule:qRule(whr), note:FREQ });
+        put(j, "wh", STDEP[c] ? "State income tax withholding reconciliation" : "State income tax withholding return and payment", qDue(y, q, whr), "next", { cat:"return", form:s[1], agency:rev, period:p, rule:qRule(whr),
+          note:STDEP[c] ? "Reconciles the quarter's deposits to the tax withheld. The deposits themselves are on the calendar by payroll." : "At this volume the tax is paid with the quarterly return. " + FREQ });
       });
     } else if(whr.charAt(0) === "M"){
       var md = +whr.slice(1);
@@ -303,6 +318,29 @@
       });
     }
   });
+
+  /* State withholding deposits, for the states in STDEP */
+  (function(){
+    var revName = function(c){ return (AG[c] && AG[c][0]) || ST[c][0] + " revenue department"; };
+    var fri = addDays(W0, -14); while(dow(fri) !== 5) fri = addDays(fri, 1);
+    for(; fri <= W1; fri = addDays(fri, 7)){
+      var pay = prevBiz(fri), sat = addDays(pay, 6 - dow(pay));
+      Object.keys(STDEP).forEach(function(c){
+        var d = STDEP[c], due = d[0] === "fed" ? addBiz(fri, 3) : d[0] === "ny" ? addBiz(pay, 3) : d[0] === "nj" ? nextBiz(addDays(sat, 4)) : null;
+        if(!due) return;
+        put("US-" + c, "dep", "State income tax withholding deposit: " + fmtMD(pay) + " payroll", due, "none", { cat:"deposit", payday:pay, form:d[1], agency:revName(c), period:"Payroll paid " + fmtShort(pay), rule:d[2] });
+      });
+    }
+    eachMonth(function(y, m){
+      var last = eom(y, m).getUTCDate();
+      [[1,7],[8,15],[16,22],[23,last]].forEach(function(r){
+        var a = D(y, m, r[0]), b = D(y, m, r[1]), has = false, f = a;
+        for(; f <= addDays(b, 1); f = addDays(f, 1)){ if(dow(f) === 5){ var p = prevBiz(f); if(p >= a && p <= b) has = true; } }
+        if(!has) return;
+        put("US-MA", "dep", "State income tax withholding deposit", addBiz(b, 3), "none", { cat:"deposit", range:[a, b], form:STDEP.MA[1], agency:revName("MA"), period:"Withheld " + fmtMD(a) + " to " + fmtMD(b), rule:STDEP.MA[2] });
+      });
+    });
+  })();
 
   /* State programs beyond withholding and unemployment */
   (function(){
@@ -559,6 +597,6 @@
     DAY:DAY, MONTHS:MONTHS, MON:MON, DOWS:DOWS, TODAY:TODAY, W0:W0, W1:W1,
     D:D, eom:eom, addDays:addDays, dow:dow, iso:iso, same:same, nextBiz:nextBiz, prevBiz:prevBiz, addBiz:addBiz,
     fmtLong:fmtLong, fmtShort:fmtShort, fmtMD:fmtMD, fmtMDY:fmtMDY,
-    JUR:JUR, ITEMS:ITEMS, COLUMBUS:COLUMBUS, LEVELS:LEVELS, CATS:CATS, byDate:byDate, HOL:HOL
+    JUR:JUR, ITEMS:ITEMS, COLUMBUS:COLUMBUS, LEVELS:LEVELS, CATS:CATS, byDate:byDate, HOL:HOL, STDEP:STDEP
   };
 })();

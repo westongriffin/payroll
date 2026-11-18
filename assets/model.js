@@ -90,9 +90,13 @@
       else if(key === "aca-ee" || key === "aca-irs") it.forms = EMPLOYEES + " Forms 1095-C";
     } else if(it.level === "state"){
       c = P.JUR[it.jur].abbr; w = WEIGHT[c];
-      if(key === "wh"){ a = w * wagesFor(per) * whRate(c); if(per.q) kind = "reported"; }
+      if(key === "wh"){ a = w * wagesFor(per) * whRate(c); if(per.q && P.STDEP[c]) kind = "reported"; }
+      else if(key === "dep") a = w * whRate(c) * (it.payday ? run(fridayOf(it.payday)).gross : total(runsIn(it.range[0], it.range[1]), "gross"));
       else if(key === "ui" && per.q) a = w * qWages(per.y, per.q) * (suiRate(c) / 100) * SUI_FRAC[per.q];
-      else if(key === "combo" && per.q){ a = w * qWages(per.y, per.q) * (whRate(c) + (suiRate(c) / 100) * SUI_FRAC[per.q]); kind = "reported"; }
+      else if(key === "combo" && per.q){
+        if(P.STDEP[c]){ a = w * qWages(per.y, per.q) * (suiRate(c) / 100) * SUI_FRAC[per.q]; }          /* withholding was deposited by payroll; unemployment is paid with the return */
+        else a = w * qWages(per.y, per.q) * (whRate(c) + (suiRate(c) / 100) * SUI_FRAC[per.q]);
+      }
       else if((key === "pfml" || key === "famli") && per.q) a = w * qWages(per.y, per.q) * 0.0088;
       else if(key === "lni" && per.q) a = w * qWages(per.y, per.q) * 0.011;
       else if(key === "mbt" && per.q) a = w * qWages(per.y, per.q) * 0.0117;
