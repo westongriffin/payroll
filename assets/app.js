@@ -128,7 +128,11 @@
 
   /* ---------- State ---------- */
   var state, cache = null;
-  var ui = { level:"all", jur:"", cat:"", range:"next30", q:"", layout:"list", month:{ y:TODAY.getUTCFullYear(), m:TODAY.getUTCMonth() + 1 }, day:P.iso(TODAY), sel:null, showAll:false };
+  var ui;
+  function freshUI(){
+    return { level:"all", jur:"", cat:"", range:"next30", q:"", layout:"list", month:{ y:TODAY.getUTCFullYear(), m:TODAY.getUTCMonth() + 1 }, day:P.iso(TODAY), sel:null, showAll:false };
+  }
+  ui = freshUI();
   function fresh(){
     return {
       selected:"accounts",
@@ -150,6 +154,11 @@
   }
   function addLog(text){ state.log.unshift({ text:text, when:"Just now", fresh:true }); state.log = state.log.slice(0, 7); }
   function say(text){ $("live").textContent = text; }
+  var toastTimer = null;
+  function toast(text){
+    var t = $("toast"); t.textContent = text; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  }
 
   /* ---------- The live calendar: computed rules plus whatever the scenarios add ---------- */
   function clone(o){ var c = {}, k; for(k in o) c[k] = o[k]; return c; }
@@ -684,7 +693,15 @@
     var onMQ = function(){ if(!narrow() && $("sheet").open) $("sheet").close(); };
     if(narrowMQ.addEventListener) narrowMQ.addEventListener("change", onMQ); else if(narrowMQ.addListener) narrowMQ.addListener(onMQ);
   }
-  $("reset").addEventListener("click", function(){ state = fresh(); ui.sel = null; render(); say("Demo reset."); });
+  /* Reset restores everything: scenarios, activity, filed marks, and every Deadlines filter and layout */
+  $("reset").addEventListener("click", function(){
+    state = fresh(); ui = freshUI();
+    clearTimeout(searchTimer);
+    if($("sheet").open) $("sheet").close();
+    render();
+    window.scrollTo(0, 0);
+    say("Demo reset."); toast("Demo reset to its starting point");
+  });
 
   state = fresh();
   render();
