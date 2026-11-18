@@ -88,6 +88,69 @@
       cost:"Employer National Insurance at 15% above the secondary threshold; workplace pension of at least 3%", final:"With the final regular payroll, including pay for untaken holiday" }
   };
 
+
+  /* Cities and counties with their own minimum wage or paid sick leave rules.
+     [name, state, minimum wage now, rate from January 1, 2027 ("" = no January change, "TBD" = not yet announced), local paid sick leave ("" = the state rule applies)]
+     Sources: ADP local minimum wage lists for January 1, 2026, July 1, 2026 and January 1, 2027; Paycor paid sick leave summary for 2026.
+     General rates only. Hotel, airport and other industry rates are left out. */
+  var J26 = ", since January 1, 2026", JL = ", since July 1, 2026";
+  var L = [
+    ["Flagstaff","AZ","$18.35" + J26,"$18.95",""], ["Tucson","AZ","$15.45" + J26,"$16.00",""],
+    ["Alameda","CA","$17.76" + JL,"",""], ["Belmont","CA","$18.95" + J26,"$19.60",""],
+    ["Berkeley","CA","$19.61" + JL,"","1 hour per 30 worked; cap of 72 hours (48 for employers under 25)"],
+    ["Burlingame","CA","$17.86" + J26,"$18.47",""], ["Cupertino","CA","$18.70" + J26,"$19.25",""], ["Daly City","CA","$17.50" + J26,"$18.10",""],
+    ["East Palo Alto","CA","$17.90" + J26,"TBD",""], ["El Cerrito","CA","$18.82" + J26,"$19.36",""],
+    ["Emeryville","CA","$20.34" + JL,"","1 hour per 30 worked; up to 72 hours a year (48 for employers with 55 or fewer)"],
+    ["Foster City","CA","$17.85" + J26,"$18.36",""], ["Fremont","CA","$18.05" + JL,"",""], ["Half Moon Bay","CA","$17.91" + J26,"$18.52",""],
+    ["Hayward","CA","$17.79 for 26 or more employees; $16.90 for 25 or fewer" + J26,"$18.39 for 26 or more; $17.40 for 25 or fewer",""],
+    ["Los Altos","CA","$18.70" + J26,"$19.25",""],
+    ["Los Angeles","CA","$18.42" + JL,"","1 hour per 30 worked; up to 48 hours a year"],
+    ["Los Angeles County, unincorporated","CA","$18.47" + JL,"",""], ["Malibu","CA","$17.91" + JL,"",""], ["Menlo Park","CA","$17.55" + J26,"$18.05",""],
+    ["Milpitas","CA","$18.50" + JL,"",""], ["Mountain View","CA","$19.70" + J26,"$20.25",""],
+    ["Novato","CA","$17.73 for 100 or more employees; $17.46 for 26 to 99; $16.90 for 25 or fewer" + J26,"$18.25 for 100 or more; $17.97 for 26 to 99; $17.40 for 25 or fewer",""],
+    ["Oakland","CA","$17.34" + J26,"TBD","1 hour per 30 worked; cap of 72 hours (40 for employers under 10)"],
+    ["Palo Alto","CA","$18.70" + J26,"$19.25",""], ["Pasadena","CA","$18.57" + JL,"",""], ["Petaluma","CA","$18.31" + J26,"$18.93",""],
+    ["Redwood City","CA","$18.65" + J26,"$19.30",""],
+    ["Richmond","CA","$19.18, or $17.68 when the employer pays $1.50 an hour toward medical benefits" + J26,"$19.61, or $18.11 with the medical benefit credit",""],
+    ["San Carlos","CA","$17.75" + J26,"$18.35",""],
+    ["San Diego","CA","$17.75" + J26,"$18.35","1 hour per 30 worked; 40 hours of use a year, cap of 80"],
+    ["San Francisco","CA","$19.61" + JL,"","1 hour per 30 worked; cap of 72 hours (40 for employers under 10)"],
+    ["San Jose","CA","$18.45" + J26,"$19.00",""], ["San Mateo","CA","$18.60" + J26,"$19.25",""],
+    ["San Mateo County, unincorporated","CA","$17.95" + J26,"$18.58",""], ["Santa Clara","CA","$18.70" + J26,"$19.25",""],
+    ["Santa Monica","CA","$18.47" + JL,"","1 hour per 30 worked; cap of 72 hours (40 for employers with 25 or fewer)"],
+    ["Santa Rosa","CA","$18.21" + J26,"$18.83",""],
+    ["Sonoma","CA","$18.47 for 26 or more employees; $17.38 for 25 or fewer" + J26,"$19.10 for 26 or more; $17.97 for 25 or fewer",""],
+    ["South San Francisco","CA","$18.15" + J26,"$18.75",""], ["Sunnyvale","CA","$19.50" + J26,"$20.05",""],
+    ["West Hollywood","CA","$20.25" + J26,"$20.94","96 paid hours a year for full-time staff, for sick leave, vacation or personal need"],
+    ["Boulder","CO","$16.82" + J26,"$18.17",""], ["Boulder County, unincorporated","CO","$16.82" + J26,"$17.43",""],
+    ["Denver","CO","$19.29" + J26,"$19.84",""], ["Edgewater","CO","$18.17" + J26,"$19.99",""],
+    ["Chicago","IL","$17.05 for employers with 4 or more" + JL,"","1 hour per 35 worked; up to 40 hours a year"],
+    ["Cook County","IL","$15.40" + JL,"","1 hour per 40 worked; up to 40 hours a year, for any reason"],
+    ["Portland","ME","$16.75" + J26,"$17.75",""], ["Rockland","ME","$16.00" + J26,"TBD",""],
+    ["Howard County","MD","$16.00 for employers with 14 or fewer" + JL,"$16.45",""],
+    ["Montgomery County","MD","$18.00 for 51 or more employees; $16.50 for 11 to 50; $15.95 for 10 or fewer" + JL,"","1 hour per 30 worked; up to 56 hours a year for employers with 5 or more"],
+    ["Bloomington","MN","State rate","","1 hour per 30 worked; up to 48 hours a year"],
+    ["Minneapolis","MN","$16.37" + J26,"$17.02","1 hour per 30 worked; up to 48 hours a year"],
+    ["St. Paul","MN","$16.37 for employers with 6 or more; $14.25 for 5 or fewer" + JL,"$17.02 for 101 or more","1 hour per 30 worked; up to 48 hours a year"],
+    ["Albuquerque","NM","2026 rate not in the source list","$13.00, or $12.00 with qualifying benefits",""],
+    ["Bernalillo County, unincorporated","NM","State rate","","1 hour per 32 worked; up to 56 hours a year for employers with 35 or more, for any reason"],
+    ["Las Cruces","NM","$13.01" + J26,"$13.47",""], ["Santa Fe","NM","2026 rate not in the source list","$17.50",""],
+    ["New York City","NY","$17.00, the state rate for the city","","1 hour per 30 worked; up to 40 paid hours a year (56 for employers with 100 or more), plus 32 unpaid hours since February 2026"],
+    ["Westchester County","NY","$17.00, the state rate for the county","","1 hour per 30 worked; up to 40 hours a year"],
+    ["Portland","OR","$16.80, the state's Portland metro rate" + JL,"","1 hour per 30 worked; up to 40 hours a year (employers with 6 or more)"],
+    ["Allegheny County","PA","State rate","","1 hour per 35 worked; up to 40 hours a year (employers with 26 or more)"],
+    ["Philadelphia","PA","State rate","","1 hour per 30 worked; up to 40 hours a year (paid for employers with 10 or more)"],
+    ["Pittsburgh","PA","State rate","","1 hour per 30 worked; up to 72 hours a year (40 for employers under 15)"],
+    ["Bellingham","WA","$19.13" + J26,"$19.73",""], ["Burien","WA","2026 rate not in the source list","$22.49 for 16 or more employees; $20.49 for 15 or fewer",""],
+    ["Everett","WA","$19.77 for covered employers" + JL,"$20.52",""],
+    ["King County, unincorporated","WA","$19.82 for most employers; $18.32 for the smallest" + J26,"$21.57 for most employers; $19.57 for the smallest",""],
+    ["Renton","WA","$21.57 for covered employers" + JL,"$22.28",""],
+    ["Seattle","WA","$21.30" + J26,"$22.14","1 hour per 40 worked, or per 30 for employers with 250 or more; no annual cap"],
+    ["SeaTac","WA","$20.74 for hospitality and transportation employees" + J26,"$21.47",""],
+    ["Tacoma","WA","State rate","","1 hour per 40 worked; no annual cap"],
+    ["Tukwila","WA","$21.65" + J26,"$22.45",""]
+  ];
+
   var P = window.PCM, jan1 = P.D(2027, 1, 1);
   if(jan1 >= P.W0 && jan1 <= P.W1){
     Object.keys(S).forEach(function(c){
@@ -98,5 +161,15 @@
         rule:"The state minimum wage moves from " + r.mw + " to " + r.mw27 + " an hour. Every hourly rate below the new minimum is raised before the first payroll of the year, and the workplace poster is replaced." });
     });
   }
-  P.RULES = { states:S, global:G };
+  if(jan1 >= P.W0 && jan1 <= P.W1){
+    var byState = {};
+    L.forEach(function(x){ if(x[3] && x[3] !== "TBD") (byState[x[1]] = byState[x[1]] || []).push(x); });
+    Object.keys(byState).forEach(function(c){
+      var list = byState[c], J = P.JUR["US-" + c], n = list.length;
+      P.ITEMS.push({ id:"US-" + c + "|lmw|2027-01-01", jur:"US-" + c, level:"state", jurName:J.name, title:"Local minimum wages rise in " + n + (n === 1 ? " city or county" : " cities and counties"), date:jan1, nominal:jan1, moved:false, cat:"processing",
+        form:"", agency:"City and county labor offices", period:"From January 1, 2027", owner:"Payroll", note:"The full list, with sick leave rules, is in the Rules tab.", url:"", urlLabel:"",
+        rule:"New local rates: " + list.map(function(x){ return x[0] + " " + x[3]; }).join("; ") + ". An employee is paid the highest of the federal, state and local rate where the work is done." });
+    });
+  }
+  P.RULES = { states:S, global:G, local:L };
 })();

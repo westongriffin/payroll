@@ -270,7 +270,7 @@
   .jh .btn{margin-left:auto;}
   table.wide{min-width:1080px;} table.file{min-width:1160px;}
   #cleanrows td:last-child,#noticerows td:last-child{min-width:250px;}
-  table.rules{min-width:1180px; font-size:14.5px;} table.rules.global{min-width:1500px;}
+  table.rules{min-width:1180px; font-size:14.5px;} table.rules.global{min-width:1500px;} table.rules.local{min-width:860px;}
   table.rules td{min-width:130px;}
   table.rules tr.office > *{background:#F7FAFF;}
   table.rules .abbr{display:inline-block;}
@@ -564,17 +564,23 @@
 
   <section class="view" id="view-rules" hidden>
     <h2>Wage and hour rules</h2>
-    <p class="sub">The rules that change from one state or country to the next, in one place. Final-pay rules feed the termination dates on the calendar, and minimum wage changes appear there on the day they take effect.</p>
+    <p class="sub">The rules that change from one state, city or country to the next, in one place. Final-pay rules feed the termination dates on the calendar, and minimum wage changes appear there on the day they take effect.</p>
     <div class="tiles gap" id="ruletiles"></div>
     <h3 class="jh">United States, 50 states and DC <span id="rulecount"></span></h3>
     <div class="panel toolbar slim">
-      <label class="field">Search <input id="rulesearch" type="search" placeholder="State or rule, for example immediately or semi-monthly" autocomplete="off"></label>
+      <label class="field">Search <input id="rulesearch" type="search" placeholder="State, city or rule, for example Seattle, immediately or semi-monthly" autocomplete="off"></label>
     </div>
     <div class="tablewrap"><table class="wide rules">
       <thead><tr><th scope="col">State</th><th scope="col">Minimum wage</th><th scope="col">Overtime</th><th scope="col">Pay frequency</th><th scope="col">Final pay if let go</th><th scope="col">Final pay if they resign</th><th scope="col">Paid sick leave</th></tr></thead>
       <tbody id="staterules"></tbody>
     </table></div>
     <p class="after">Sources: U.S. Department of Labor state minimum wage table (updated November 5, 2026) and state payday table (January 2023); ADP list of January 1, 2027 increases (November 9, 2026); Nolo final paycheck chart (May 2023); Paycor paid sick leave summary for 2026. Local rules can be stricter. Each rule is confirmed with the state labor office before it is relied on.</p>
+    <h3 class="jh">Cities and counties <span id="localcount"></span></h3>
+    <div class="tablewrap"><table class="rules local">
+      <thead><tr><th scope="col">City or county</th><th scope="col">Minimum wage now</th><th scope="col">From January 1, 2027</th><th scope="col">Local paid sick leave</th></tr></thead>
+      <tbody id="localrules"></tbody>
+    </table></div>
+    <p class="after">Sources: ADP local minimum wage lists for January 1, 2026, July 1, 2026 and January 1, 2027; Paycor paid sick leave summary for 2026. General rates only: hotel, airport and other industry rates are left out, and the lists are not exhaustive. The search box above filters this table too. An employee is paid the highest of the federal, state and local rate where the work is done.</p>
     <h3 class="jh">Global <span>nine sample countries</span></h3>
     <div class="tablewrap"><table class="wide rules global">
       <thead><tr><th scope="col">Country</th><th scope="col">Tax year</th><th scope="col">Pay timing</th><th scope="col">Minimum wage</th><th scope="col">Hours and overtime</th><th scope="col">Required extra pay</th><th scope="col">Paid annual leave</th><th scope="col">Employer costs on top of pay</th><th scope="col">Final pay</th></tr></thead>

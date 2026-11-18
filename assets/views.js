@@ -592,7 +592,8 @@
         tile("Minimum wage rising January 1, 2027", rising + " states", "New rates are on the calendar", rising > 0),
         tile("Final pay due within a day of discharge", fast + " of 51", "States and DC; carried on the termination checklist"),
         tile("Paid sick leave required", (sick - 1) + " states and DC", "Accrual rates and caps are in the table"),
-        tile("Daily overtime rules", daily + " states", "Beyond the federal 40-hour week")
+        tile("Daily overtime rules", daily + " states", "Beyond the federal 40-hour week"),
+        tile("Cities and counties with their own rules", String(P.RULES.local.length), P.RULES.local.filter(function(x){ return x[3] && x[3] !== "TBD"; }).length + " raise their minimum wage on January 1")
       ]);
       function hit(text){ if(!rq) return true; var w = rq.toLowerCase().split(/\s+/), i, t = text.toLowerCase(); for(i = 0; i < w.length; i++) if(w[i] && t.indexOf(w[i]) < 0) return false; return true; }
       var rows = codes.filter(function(c){ var r = S[c]; return hit([JUR["US-" + c].name, c, r.mw, r.mw27 || "", r.ot, r.pay, r.fired, r.quit, r.sick].join(" ")); }).map(function(c){
@@ -604,6 +605,12 @@
       });
       swap($("staterules"), rows.length ? rows : [h("tr", null, h("td", { colspan:"7", class:"none", text:"No states match that search." }))]);
       $("rulecount").textContent = plural(rows.length, "state", "states") + " shown";
+      var lrows = P.RULES.local.filter(function(x){ return hit([x[0], x[1], JUR["US-" + x[1]].name, x[2], x[3], x[4]].join(" ")); }).map(function(x){
+        return h("tr", null, h("th", { scope:"row" }, h("span", { class:"abbr", text:x[1] }), h("span", { class:"jn2", text:x[0] })),
+          td(x[2]), h("td", null, x[3] === "TBD" ? "Not yet announced" : x[3] ? h("span", { class:"warnc", text:x[3] }) : "No change in January"), td(x[4] || "The state rule applies"));
+      });
+      swap($("localrules"), lrows.length ? lrows : [h("tr", null, h("td", { colspan:"4", class:"none", text:"No cities or counties match that search." }))]);
+      $("localcount").textContent = plural(lrows.length, "city or county", "cities and counties") + " shown";
       swap($("globalrules"), Object.keys(G).sort(function(a, b){ return JUR[a].name < JUR[b].name ? -1 : 1; }).map(function(k){
         var g = G[k];
         return h("tr", null, h("th", { scope:"row" }, h("span", { class:"abbr", text:JUR[k].abbr }), h("span", { class:"jn2", text:JUR[k].name })),
