@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Payroll Control Monitor · Catapult Solutions Group concept demo</title>
-<meta name="description" content="Concept demo: every federal, state, local and international payroll deadline in one calendar, each with an owner and saved evidence. Sample data only.">
+<meta name="description" content="Concept demo: every federal, state, local and international payroll deadline, the pay run calendar, quarterly tie-out, tax account register, notice log and clean-up tracker in one place. Sample data only.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#12122E">
 <link rel="icon" type="image/png" href="assets/favicon.png">
@@ -119,7 +119,8 @@
   .rows{background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;}
   .rows li + li{border-top:1px solid #ECEDEE;}
   .row{width:100%; text-align:left; cursor:pointer; background:transparent; border:0; border-left:4px solid transparent; padding:10px 14px 10px 10px;
-    display:grid; grid-template-columns:44px minmax(0,1fr) auto auto; gap:12px; align-items:center;}
+    display:grid; grid-template-columns:44px minmax(0,1fr) auto auto auto; gap:12px; align-items:center;}
+  .row .amt{font-variant-numeric:tabular-nums; font-weight:600; font-size:14.5px; white-space:nowrap; text-align:right;}
   .row:hover{background:#F7FAFF;}
   .row[aria-pressed="true"]{background:#EEF5FF; border-left-color:var(--blue);}
   .row.flag{background:#FFFBF1; border-left-color:var(--warn-line);}
@@ -251,8 +252,79 @@
   .stamp{margin-top:12px; display:flex; align-items:center; gap:8px; font-family:var(--display); font-weight:800; color:var(--ok);}
   .stamp span{width:24px; height:24px; border-radius:50%; background:var(--ok); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;}
 
+  /* ---------- Deadline detail: dollars, escalation, portal ---------- */
+  .blk .big{font-size:15.5px;} .blk .big span{color:var(--muted); font-size:13.5px;}
+  .blk .small{font-size:13.5px; color:var(--muted);}
+  .tiers,.ladder{margin-top:6px; display:flex; flex-direction:column; gap:5px; font-size:14.5px;}
+  .tiers li{display:flex; justify-content:space-between; gap:12px; border-top:1px solid #ECEDEE; padding-top:5px;}
+  .tiers li:first-child{border-top:0; padding-top:0;}
+  .tiers b{font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .ladder li{position:relative; padding-left:16px;}
+  .ladder li::before{content:""; position:absolute; left:1px; top:.6em; width:7px; height:7px; border-radius:50%; background:var(--warm-b);}
+  .ladder b{display:block; font-size:13.5px;}
+  .where{background:#F1F7FF; border-radius:10px; padding:10px 12px;}
+  .portal{font-family:var(--display); font-weight:700; font-size:15.5px;}
+
+  /* ---------- Shared pieces for the newer tabs ---------- */
+  .gap{margin-top:16px;}
+  .jh .btn{margin-left:auto;}
+  table.wide{min-width:1080px;} table.file{min-width:1160px;}
+  #cleanrows td:last-child,#noticerows td:last-child{min-width:250px;}
+  #runrows td,#runrows th,#intlrows td,#tieruns td,#tieruns th{white-space:nowrap;}
+  .checks{margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;}
+  .checks li{display:flex; align-items:center; gap:12px; padding:10px 14px; border-top:1px solid #ECEDEE; font-size:15px;}
+  .checks li:first-child{border-top:0;}
+  .checks .ck{flex:0 0 auto; width:22px; height:22px; border-radius:50%; border:2px solid #C4C8CC; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff;}
+  .checks li.done .ck{background:var(--ok); border-color:var(--ok);}
+  .checks .ct{flex:1; min-width:0;}
+  .checks li.done .ct{color:var(--muted);}
+  th.num,td.num{text-align:right; white-space:nowrap;}
+  td small,th small{display:block; font-size:13px; font-weight:400; color:var(--muted); margin-top:2px;}
+  td.var{color:var(--warn);}
+  td.mono{font-variant-numeric:tabular-nums; white-space:nowrap;}
+  td.none{text-align:center; color:var(--muted); padding:26px;}
+  tr.hl > *{background:#FFFBF1;}
+  tbody th{font-weight:600;}
+  .pill.sm{font-size:10.5px; padding:1px 7px; margin-left:8px;}
+  .btn.sm{font-size:13px; padding:5px 12px;}
+  .btn.danger{color:#A12A1C; margin-left:auto;}
+  .btn.danger:hover{border-color:#A12A1C;}
+  a.btn{text-decoration:none; color:var(--ink); display:inline-block;}
+  .okc{color:var(--ok);} .warnc{color:var(--warn) !important;}
+  .jn2{display:block; margin-top:4px; font-weight:600;}
+  .file th .pill.sm{margin-left:0; margin-top:4px;}
+  .check{display:flex; align-items:center; gap:8px; font-size:15px; align-self:end; padding-bottom:9px;}
+  .check input{width:18px; height:18px;}
+  .strip{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:14px; overflow:hidden; margin-top:10px;}
+  .strip div{background:var(--card); padding:14px 16px; display:flex; flex-direction:column; gap:2px;}
+  .strip span{font-size:13.5px; color:var(--muted);}
+  .strip b{font-family:var(--display); font-size:19px; font-variant-numeric:tabular-nums;}
+  .privacy{margin-top:14px; background:#F1F7FF; border:1px solid #C9DEFB; border-radius:12px; padding:12px 14px; font-size:14.5px; max-width:96ch;}
+  .entgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; margin-top:10px;}
+  .entcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:8px;}
+  .enthead{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+  .enthead h3{font-size:17px; font-weight:800; line-height:1.25;}
+  .entdba{font-size:14.5px; color:var(--muted); margin-top:-4px;}
+  .entmeta{display:grid; grid-template-columns:1fr 1fr; gap:8px 14px;}
+  .entmeta dt{font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);}
+  .entmeta dd{font-size:14px; overflow-wrap:anywhere;}
+  .entnote{font-size:13.5px; color:var(--muted);}
+  .entcount{font-size:13.5px; font-weight:600; margin-top:auto;}
+  .recover{margin-top:16px; background:var(--card); border:1px solid var(--line); border-left:5px solid var(--teal); border-radius:0 14px 14px 0; padding:16px 18px; max-width:96ch;}
+  .recover h3{font-size:17px; font-weight:800;}
+  .recover ul{margin-top:8px; display:flex; flex-direction:column; gap:8px; font-size:15px;}
+  .recover p{margin-top:10px; font-size:14px; color:var(--muted);}
+  dialog.rec{max-width:760px; border-radius:16px; margin:auto; max-height:92vh;}
+  .recform{padding:4px 20px 22px;}
+  .recform h2{font-size:20px;}
+  .recnote{margin-top:8px; font-size:14px; background:#F1F7FF; border-radius:10px; padding:8px 12px;}
+  .recgrid{display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; margin-top:14px;}
+  .recgrid .wide{grid-column:1 / -1;}
+  .recgrid textarea{font:inherit; font-size:15px; border:1.5px solid var(--line); border-radius:10px; padding:8px 10px; width:100%; resize:vertical; text-transform:none; letter-spacing:0; font-weight:400; color:var(--ink);}
+  .recacts{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:18px;}
+
   /* ---------- Report table ---------- */
-  .tablewrap{overflow-x:auto; margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:14px;}
+  .tablewrap{position:relative; overflow-x:auto; margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:14px;}
   table{border-collapse:collapse; width:100%; min-width:760px; font-size:15px;}
   th,td{text-align:left; padding:12px 16px; border-top:1px solid #ECEDEE; vertical-align:top;}
   thead th{border-top:0; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:700; background:#FAFAFB;}
@@ -291,7 +363,7 @@
     .brand h1{flex-basis:100%; order:3; font-size:19px;}
     .brand .asof{font-size:12.5px;}
     .row{grid-template-columns:38px minmax(0,1fr) auto; gap:10px; padding-right:10px;}
-    .row .lv{display:none;}
+    .row .lv,.row .amt{display:none;}
     .row .sub{white-space:normal;}
     .row .pill{font-size:10.5px; padding:2px 7px;}
     .cell{min-height:58px; padding:4px;}
@@ -300,6 +372,8 @@
     .calhead h3{min-width:0; flex:1; font-size:16px;}
     .count{margin-left:0; flex-basis:100%;}
     .dmeta{grid-template-columns:1fr;}
+    .recgrid,.entmeta{grid-template-columns:1fr;}
+    dialog.rec{border-radius:16px 16px 0 0; margin:auto auto 0;}
   }
   @media (max-width:520px){
     .tiles{grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
@@ -333,12 +407,16 @@
     <h1>Payroll Control Monitor</h1>
     <span class="asof" id="asof"></span>
   </div>
-  <p class="lede">Every deposit, filing and notice has an owner, a date and saved evidence. The calendar tracks every federal, state, local and international deadline, and the controls show how a problem gets caught and closed.</p>
+  <p class="lede">Every deposit, filing and notice has an owner, a date and saved evidence. One place for the deadlines, the pay runs, the dollars, the accounts and logins, the notices and the clean-up.</p>
   <div class="mastrow">
     <nav class="tabs" aria-label="Views">
       <a class="tab" href="#deadlines" data-view="deadlines">Deadlines</a>
+      <a class="tab" href="#pay-runs" data-view="pay-runs">Pay runs</a>
+      <a class="tab" href="#tie-out" data-view="tie-out">Tie-out</a>
+      <a class="tab" href="#company-file" data-view="company-file">Company file</a>
+      <a class="tab" href="#notices" data-view="notices">Notices</a>
+      <a class="tab" href="#clean-up" data-view="clean-up">Clean-up</a>
       <a class="tab" href="#controls" data-view="controls">Controls</a>
-      <a class="tab" href="#jurisdictions" data-view="jurisdictions">Jurisdictions</a>
       <a class="tab" href="#monthly-report" data-view="monthly-report">Monthly report</a>
       <a class="tab" href="#first-90-days" data-view="first-90-days">First 90 days</a>
     </nav>
@@ -365,6 +443,7 @@
           <button type="button" id="layList" aria-pressed="true">List</button>
           <button type="button" id="layMonth" aria-pressed="false">Month</button>
         </div>
+        <button class="btn" type="button" id="logevent">Log an event</button>
         <button class="btn" type="button" id="ics">Add these to my calendar</button>
         <button class="btn" type="button" id="csv">Export spreadsheet</button>
         <span class="count" id="count" aria-live="polite"></span>
@@ -397,10 +476,115 @@
     </div>
   </section>
 
-  <section class="view" id="view-jurisdictions" hidden>
-    <h2>Where the calendar reaches</h2>
-    <p class="sub">Every jurisdiction with a rule on the calendar. Select one to see its deadlines. Offices come from Catapult's public locations; the local and international footprint is a sample to be replaced by the account register.</p>
-    <div id="jbody"></div>
+  <section class="view" id="view-pay-runs" hidden>
+    <h2>Payroll run calendar</h2>
+    <p class="sub">One weekly U.S. run for internal and field staff, paid on Friday. Every cutoff is counted back from the pay date in business days, so holiday weeks move on their own and nobody finds out on Wednesday.</p>
+    <div class="tiles gap" id="runtiles"></div>
+    <h3 class="jh">United States, weekly</h3>
+    <div class="tablewrap"><table class="wide">
+      <thead><tr><th scope="col">Pay date</th><th scope="col">Pay period</th><th scope="col">Timesheets approved</th><th scope="col">Preview and second review</th><th scope="col">Submit by</th><th scope="col">Funding</th><th scope="col" class="num">Gross wages (sample)</th><th scope="col">Federal deposit due</th><th scope="col">Status</th></tr></thead>
+      <tbody id="runrows"></tbody>
+    </table></div>
+    <h3 class="jh">International, monthly <span>run by in-country vendors</span></h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">Country</th><th scope="col">Inputs due to vendor</th><th scope="col">Approval due</th><th scope="col">Pay date</th><th scope="col">Vendor confirmation due</th><th scope="col" class="num">Monthly payroll (sample, USD)</th><th scope="col">Status</th></tr></thead>
+      <tbody id="intlrows"></tbody>
+    </table></div>
+    <p class="after">Pay dates outside the U.S. are adjusted for weekends. Local public holidays are confirmed with each vendor.</p>
+  </section>
+
+  <section class="view" id="view-tie-out" hidden>
+    <h2>Quarterly tie-out</h2>
+    <p class="sub">The payroll register, the deposits, the returns and the general ledger have to say the same thing. This is the check that catches a problem before an agency does.</p>
+    <div class="tools gap">
+      <div class="seg" role="group" aria-label="Quarter">
+        <button type="button" id="tqcur" aria-pressed="true"></button>
+        <button type="button" id="tqprev" aria-pressed="false"></button>
+      </div>
+    </div>
+    <div class="tiles gap" id="tietiles"></div>
+    <h3 class="jh">Source against source</h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">Check</th><th scope="col" class="num">Payroll register</th><th scope="col">Compared with</th><th scope="col" class="num">Amount</th><th scope="col" class="num">Variance</th><th scope="col">Status</th></tr></thead>
+      <tbody id="tierows"></tbody>
+    </table></div>
+    <h3 class="jh">Run by run <span>every deposit matched to its payroll run</span></h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">Pay date</th><th scope="col" class="num">Gross wages</th><th scope="col" class="num">Federal tax</th><th scope="col">Deposit due</th><th scope="col">Deposit</th><th scope="col">Confirmation</th><th scope="col" class="num">Variance</th><th scope="col">Second review</th></tr></thead>
+      <tbody id="tieruns"></tbody>
+    </table></div>
+    <h3 class="jh">Year-end preview <span>the four Forms 941 must equal the W-2 totals</span></h3>
+    <div class="strip" id="yepreview"></div>
+    <h3 class="jh">Year-end readiness <span id="yecount"></span></h3>
+    <ol class="checks" id="yechecks"></ol>
+    <p class="after">All figures are sample data. In use, each column is loaded from its own source: the payroll system, EFTPS, the filed returns and the general ledger.</p>
+  </section>
+
+  <section class="view" id="view-company-file" hidden>
+    <h2>Company file</h2>
+    <p class="sub">One place for every entity, tax account, filing detail, agency site and login record. Open any account to edit it, jump to its agency site, or see its deadlines.</p>
+    <p class="privacy"><b>Saved in this browser only.</b> Anything you add or change stays on this device and is not sent anywhere. Passwords do not belong here: record who holds each login and where the password is stored. Use Back up to keep a copy or move it to another computer.</p>
+    <h3 class="jh">Entities <button class="btn sm" type="button" id="entadd">Add an entity</button></h3>
+    <div class="entgrid" id="entgrid"></div>
+    <h3 class="jh">Who to call <button class="btn sm" type="button" id="conadd">Add a contact</button></h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">Role</th><th scope="col">Name</th><th scope="col">Phone and email</th><th scope="col">When to call</th><th scope="col"><span class="sr">Edit</span></th></tr></thead>
+      <tbody id="contactrows"></tbody>
+    </table></div>
+    <h3 class="jh">Tax accounts, filing details and logins</h3>
+    <div class="tiles gap" id="filetiles"></div>
+    <div class="panel toolbar">
+      <div class="levels" id="filelevels" role="group" aria-label="Jurisdiction level"></div>
+      <div class="filters">
+        <label class="field">Search <input id="filesearch" type="search" placeholder="State, form, portal or person" autocomplete="off"></label>
+        <label class="check"><input type="checkbox" id="fileattn"> Needs attention only</label>
+      </div>
+      <div class="tools">
+        <button class="btn" type="button" id="fileadd">Add an account</button>
+        <button class="btn" type="button" id="filecsv">Export spreadsheet</button>
+        <button class="btn" type="button" id="filebackup">Back up</button>
+        <button class="btn" type="button" id="fileimport">Restore a backup</button>
+        <button class="btn" type="button" id="filerestore" hidden>Restore sample data</button>
+        <input type="file" id="filepick" accept="application/json,.json" hidden>
+        <span class="count" id="filecount" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="tablewrap"><table class="wide file">
+      <thead><tr><th scope="col">Jurisdiction</th><th scope="col">Account</th><th scope="col">Account ID</th><th scope="col">Filing and rate</th><th scope="col">Where to file and pay</th><th scope="col">Login held by</th><th scope="col">Last verified</th><th scope="col">Standing</th><th scope="col"><span class="sr">Open</span></th></tr></thead>
+      <tbody id="filerows"></tbody>
+    </table></div>
+    <p class="after">Account IDs, rates, people and statuses are sample data. Agency addresses were checked in November 2026 and are confirmed again each time an account is verified.</p>
+  </section>
+
+  <section class="view" id="view-notices" hidden>
+    <h2>Notice log</h2>
+    <p class="sub">Every agency notice and garnishment order in one shared log, with an owner and a response date set within one business day. Nothing sits in one person's inbox.</p>
+    <div class="tiles gap" id="noticetiles"></div>
+    <div class="tablewrap"><table class="wide">
+      <thead><tr><th scope="col">Received</th><th scope="col">Agency</th><th scope="col">What it says</th><th scope="col" class="num">Amount</th><th scope="col">Owner</th><th scope="col">Response</th><th scope="col">Age</th><th scope="col">Status</th></tr></thead>
+      <tbody id="noticerows"></tbody>
+    </table></div>
+    <p class="after">Sample entries. Start the notice scenario in Controls to watch a new one move through the log.</p>
+  </section>
+
+  <section class="view" id="view-clean-up" hidden>
+    <h2>Clean-up and recovery</h2>
+    <p class="sub">Where the inherited problems stand, what they have cost, and what can come back. These are sample items: the real list is built in the first 30 days from IRS transcripts and each state's account history.</p>
+    <div class="tiles gap" id="cleantiles"></div>
+    <div class="tablewrap"><table class="wide">
+      <thead><tr><th scope="col">Agency and period</th><th scope="col">Issue</th><th scope="col" class="num">Assessed</th><th scope="col" class="num">Paid</th><th scope="col" class="num">Relief requested</th><th scope="col" class="num">Recovered</th><th scope="col">Status</th><th scope="col">Next step</th></tr></thead>
+      <tbody id="cleanrows"></tbody>
+    </table></div>
+    <div class="recover">
+      <h3>How money comes back</h3>
+      <ul>
+        <li><b>First-time abatement.</b> The IRS can remove failure-to-file, failure-to-pay and failure-to-deposit penalties for one period when the three years before it were clean and everything is now filed and paid.</li>
+        <li><b>Reasonable cause.</b> Other periods need facts showing ordinary care was used. These requests are harder to win and are written with the outside CPA.</li>
+        <li><b>State and local waivers.</b> Each agency has its own rules. Asking with the back returns already filed and paid gives the best odds.</li>
+        <li><b>Amended returns.</b> Where wages or tax were over-reported, a corrected return claims the difference back.</li>
+      </ul>
+      <p>Relief requested is a request, not a forecast. The tracker counts money as recovered only when the agency confirms it.</p>
+    </div>
   </section>
 
   <section class="view" id="view-monthly-report" hidden>
@@ -471,10 +655,18 @@
   <div id="sheetbody"></div>
 </dialog>
 
+<dialog class="sheet rec" id="recdlg" aria-label="Record">
+  <div class="sheethead"><button class="btn" type="button" id="recclose">Close</button></div>
+  <div id="recbody"></div>
+</dialog>
+
 <div class="toast" id="toast" aria-hidden="true"></div>
 <div class="sr" id="live" aria-live="polite"></div>
 
 <script src="assets/deadlines.js"></script>
+<script src="assets/links.js"></script>
+<script src="assets/model.js"></script>
+<script src="assets/views.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 /* Payroll Control Monitor: interface. Sample data only. */
 (function(){
   "use strict";
-  var P = window.PCM, TODAY = P.TODAY, DAY = P.DAY, JUR = P.JUR;
+  var P = window.PCM, TODAY = P.TODAY, DAY = P.DAY, JUR = P.JUR, money = P.model.money;
 
   /* ---------- Small DOM helper ---------- */
   function h(tag, attrs){
@@ -137,7 +137,7 @@
     return {
       selected:"accounts",
       steps:{ location:0, deposit:null, notice:null },   /* null = not started, 0 to 2 = in progress, 3 = resolved */
-      filed:{},
+      filed:{}, events:[],
       log:[
         { text:SCENARIOS.location.trigger, when:"This morning" },
         { text:"Thursday payroll run second-reviewed and signed off", when:"Yesterday" },
@@ -169,6 +169,7 @@
         var c = clone(it);
         c.date = DEP_DUE; c.nominal = DEP_DUE; c.moved = false;
         c.title = "Federal tax deposit: $100,000 next-day rule";
+        c.amt = 118400; c.amtKind = "pay";
         c.note = "This run accumulated $118,400 in federal tax, so the deposit moved up from the semiweekly date (" + P.fmtShort(it.date) + ") to the next business day.";
         if(busy("deposit")) c.flag = "Due " + P.fmtShort(DEP_DUE); else c.closed = "Deposited on time";
         return c;
@@ -191,6 +192,7 @@
         rule:"If a deposit is still unpaid more than 10 days after the first notice, the penalty rises to 15%. The response date is set the day the notice is logged.",
         flag:busy("notice") ? "Response due" : null, closed:resolved("notice") ? "Closed" : null });
     }
+    state.events.forEach(function(ev){ out = out.concat(ev.items); });
     out.sort(P.byDate);
     var byId = {}; out.forEach(function(it){ byId[it.id] = it; });
     cache = out; cache.byId = byId;
@@ -245,11 +247,11 @@
 
   /* ---------- Deadlines: tiles, toolbar, list, month, detail ---------- */
   function renderDTiles(){
-    var all = items().filter(isDeadline), n7 = 0, n30 = 0, n365 = 0, past = 0, by7 = { federal:0, state:0, local:0, global:0 };
+    var all = items().filter(isDeadline), n7 = 0, n30 = 0, n365 = 0, past = 0, by7 = { federal:0, state:0, local:0, global:0 }, cash7 = 0, pay7 = 0;
     all.forEach(function(it){
       var n = daysOut(it);
       if(n < 0){ past++; return; }
-      if(n <= 7){ n7++; by7[it.level]++; }
+      if(n <= 7){ n7++; by7[it.level]++; if(it.amt != null && it.amtKind === "pay" && !state.filed[it.id] && !it.closed){ cash7 += it.amt; pay7++; } }
       if(n <= 30) n30++;
       if(n <= 365) n365++;
     });
@@ -258,6 +260,7 @@
     Object.keys(JUR).forEach(function(k){ var j = JUR[k]; if(j.level !== "federal" && !(j.pending && !resolved("location"))) counts[j.level]++; });
     var tiles = [
       { label:"Due in the next 7 days", value:num(n7), note:by7.federal + " federal, " + by7.state + " state, " + by7.local + " local, " + by7.global + " global" },
+      { label:"Tax payments due in the next 7 days", value:money(cash7), note:plural(pay7, "payment", "payments") + " to fund, sample figures" },
       { label:"Due in the next 30 days", value:num(n30), note:f ? plural(f, "item needs", "items need") + " attention" : "Each one has an owner", warn:f > 0 },
       { label:"Past due", value:"0", note:num(past) + " filed on time in the last 45 days" },
       { label:"Tracked over the next 12 months", value:num(n365), note:"Federal, " + counts.state + " states, " + counts.local + " localities, " + counts.global + " countries" }
@@ -309,6 +312,7 @@
         "aria-pressed":ui.sel === it.id ? "true" : "false", "data-id":it.id, onclick:function(){ pick(it.id); } },
       h("span", { class:"dt" + (first ? "" : " rep"), "aria-hidden":first ? null : "true" }, h("b", { text:String(it.date.getUTCDate()) }), h("i", { text:P.DOWS[P.dow(it.date)] })),
       h("span", { class:"main" }, h("span", { class:"ttl", text:it.title }), h("span", { class:"sub", text:sub })),
+      h("span", { class:"amt", text:it.amt != null && it.amtKind === "pay" ? money(it.amt) : "" }),
       h("span", { class:"lv lv-" + it.level, text:LEVELNAME[it.level] }),
       h("span", { class:"pill " + st.c, text:st.t })));
   }
@@ -391,6 +395,38 @@
     var w = P.dow(it.nominal), k = P.iso(it.nominal);
     return "Moved from " + P.fmtLong(it.nominal) + (w === 0 || w === 6 ? ", a weekend." : P.HOL[k] ? ", " + P.HOL[k] + "." : ".");
   }
+  var BACKUP = { "Payroll":"Payroll Specialist", "Payroll and Finance":"Controller", "HR and Benefits":"HR Generalist", "HR":"HR Generalist", "Head of HR and Payroll":"Controller", "Payroll, with the in-country vendor":"Payroll Manager" };
+  function backupFor(it){ return BACKUP[it.owner] || "Controller"; }
+  function bizBack(dt, n){ while(n > 0){ dt = P.prevBiz(P.addDays(dt, -1)); n--; } return dt; }
+  /* What a miss would cost. Federal tiers are the IRS failure-to-deposit penalty; other agencies set their own. */
+  function dollarsNode(it){
+    var key = it.id.split("|")[1], kids = [];
+    if(it.amt == null){
+      if(!it.forms) return null;
+      kids.push(h("p", { text:it.forms + " ride on this date. Penalties for late or wrong information returns are charged per form and rise the later the forms go out." }));
+    } else {
+      kids.push(h("p", { class:"big" }, (it.amtKind === "pay" ? "Payment due: " : "Tax reported: "), h("b", { text:money(it.amt, true) }), it.usd ? " in U.S. dollar terms" : "", h("span", { text:" Sample figure." })));
+      if(it.level === "federal" && it.amtKind === "pay"){
+        kids.push(h("ul", { class:"tiers" }, [["1 to 5 days late", .02], ["6 to 15 days late", .05], ["More than 15 days late", .10], ["Unpaid 10 days after an IRS notice", .15]].map(function(t){
+          return h("li", null, h("span", { text:t[0] + ": " + Math.round(t[1] * 100) + "%" }), h("b", { text:money(it.amt * t[1], true) }));
+        })));
+      } else if(it.level === "federal"){
+        kids.push(h("p", { text:"Filing late costs 5% of any unpaid tax for each month, up to 25%. With every deposit made on time, the unpaid balance is $0." }));
+      } else {
+        kids.push(h("p", { text:"Penalties and interest for paying late are set by the agency and are added to the notice if it ever slips." }));
+      }
+    }
+    return h("div", { class:"blk" }, h("h3", { text:"What rides on this date" }), kids);
+  }
+  function escalationNode(it){
+    var t2 = bizBack(it.date, 2), t1 = bizBack(it.date, 1), boss = it.owner === "Head of HR and Payroll", today = P.same(it.date, TODAY);
+    return h("div", { class:"blk" }, h("h3", { text:"If it slips" }),
+      h("ul", { class:"ladder" },
+        today ? h("li", null, h("b", { text:"Today" }), "Earlier alerts have cleared. If it is not confirmed by the end of the day, the CEO and the Controller are alerted and " + backupFor(it) + " files it.") : null,
+        !today ? h("li", null, h("b", { text:"7 and 3 days before" }), "Reminders go to " + it.owner + ".") : null,
+        !today && t2 >= TODAY ? h("li", null, h("b", { text:P.fmtShort(t2) }), "Still not filed: " + (boss ? "the Controller is alerted" : "the Head of HR and Payroll is alerted") + " and " + backupFor(it) + " steps in.") : null,
+        !today ? h("li", null, h("b", { text:P.fmtShort(t1 < TODAY ? TODAY : t1) }), "Still not filed: the CEO and the Controller are alerted.") : null));
+  }
   function detailNodes(it){
     if(!it){
       return [
@@ -399,7 +435,10 @@
           h("li", null, h("b", { text:"Computed, not typed in. " }), "Each date comes from the agency's published rule, so the calendar rolls forward on its own and never needs re-keying."),
           h("li", null, h("b", { text:"Weekends and holidays. " }), "A U.S. date that lands on a weekend or federal holiday moves to the next business day, and the original date stays visible."),
           h("li", null, h("b", { text:"Outside the U.S. " }), "Dates follow each country's weekend rule. Local public holidays are confirmed with the in-country vendor."),
-          h("li", null, h("b", { text:"Tied to the controls. " }), "A new work location or an agency notice adds its own dates here the moment it is logged.")),
+          h("li", null, h("b", { text:"Tied to the controls. " }), "A new work location or an agency notice adds its own dates here the moment it is logged."),
+          h("li", null, h("b", { text:"Events start clocks. " }), "A new hire, a termination, a child support order or a workplace injury has its own deadlines. Log an event to add them."),
+          h("li", null, h("b", { text:"Nothing slips quietly. " }), "Every deadline has an owner, a backup and a dated escalation path that ends with the CEO."),
+          h("li", null, h("b", { text:"One click to the agency. " }), "Each deadline links to the site where it is filed or paid, and shows who holds the login.")),
         h("div", { class:"blk" }, h("h3", { text:"Sample company profile" }),
           h("p", { text:"Weekly Friday payroll, semiweekly federal depositor, calendar-year benefit plans, offices in Texas, Massachusetts, Virginia and Arizona, and nine sample countries. Swap in the real account register and the calendar rebuilds itself." })),
         h("div", { class:"blk" }, h("h3", { text:"On the watch list, no date yet" }),
@@ -412,7 +451,8 @@
     var st = statusOf(it), n = daysOut(it), dl = isDeadline(it);
     var when = n === 0 ? "Today" : n > 0 ? "In " + plural(n, "day", "days") : plural(-n, "day", "days") + " ago";
     var canFile = dl && n >= 0 && !it.flag && !it.closed;
-    var meta = [["Jurisdiction", it.jurName], ["Agency", it.agency], ["Form", it.form], ["Period", it.period], ["Owner", dl ? it.owner : ""], ["Type", CATNAME[it.cat]]]
+    var portal = dl && extra.portalFor ? extra.portalFor(it) : null, upcoming = dl && n >= 0 && !it.closed && !state.filed[it.id];
+    var meta = [["Jurisdiction", it.jurName], ["Agency", it.agency], ["Form", it.form], ["Period", it.period], ["Owner", dl ? it.owner : ""], ["Backup", dl ? backupFor(it) : ""], ["Type", CATNAME[it.cat]]]
       .filter(function(r){ return r[1]; });
     var ev = EVIDENCE[it.cat], J = JUR[it.jur], src = it.url || J.url || "";
     return [
@@ -421,14 +461,20 @@
       h("p", { class:"ddate" }, P.fmtLong(it.date), h("span", { text:when })),
       it.moved ? h("p", { class:"moved", text:movedWhy(it) }) : null,
       h("dl", { class:"dmeta" }, meta.map(function(r){ return h("div", null, h("dt", { text:r[0] }), h("dd", { text:r[1] })); })),
+      portal ? h("div", { class:"blk where" }, h("h3", { text:"Where to file or pay" }),
+        h("p", null, h("a", { class:"portal", href:portal.url, target:"_blank", rel:"noopener noreferrer", text:portal.name + " \u2197" })),
+        portal.holder ? h("p", { class:"small", text:"Login held by " + portal.holder + (portal.backup ? ", backup " + portal.backup : "") + ". Details are in the Company file." }) : null) : null,
       it.rule ? h("div", { class:"blk" }, h("h3", { text:dl ? "How the date is set" : "What this means" }), h("p", { text:it.rule })) : null,
+      dl ? dollarsNode(it) : null,
+      upcoming ? escalationNode(it) : null,
       it.note || J.note ? h("div", { class:"blk" }, h("h3", { text:"Worth knowing" }), it.note ? h("p", { text:it.note }) : null, J.note ? h("p", { text:J.note }) : null) : null,
       ev && dl ? h("div", { class:"blk" }, h("h3", { text:n < 0 || state.filed[it.id] || it.closed ? "Evidence saved" : "Evidence to save" }),
         h("div", { class:"chips" }, ev.map(function(e){ return h("span", { class:"chip", text:e }); }))) : null,
       it.flag ? h("p", { class:"callout" }, "This item is open in ", h("a", { href:"#controls", text:"Controls" }), ". Work its three steps there to close it.") : null,
       dl ? h("div", { class:"dacts" },
         canFile ? h("button", { class:"go", type:"button", onclick:function(){ toggleFiled(it); } }, state.filed[it.id] ? "Undo: mark as not filed" : "Mark as filed, attach confirmation") : null,
-        h("button", { class:"btn", type:"button", onclick:function(){ exportICS([it], "deadline"); } }, "Add to my calendar")) : null,
+        h("button", { class:"btn", type:"button", onclick:function(){ exportICS([it], "deadline"); } }, "Add to my calendar"),
+        it.ev ? h("button", { class:"btn danger", type:"button", onclick:function(){ removeEvent(it.ev); } }, "Remove this event") : null) : null,
       src ? h("p", { class:"ref" }, "Source: ", h("a", { href:src, target:"_blank", rel:"noopener", text:it.url ? (it.urlLabel || it.agency) : J.agency })) : null
     ];
   }
@@ -454,6 +500,77 @@
     else { state.filed[it.id] = true; addLog("Filed early with confirmation saved: " + it.title + " (" + it.jurName + ")"); say("Marked as filed."); }
     render();
   }
+  /* ---------- Event clocks: things that are due because something happened, not because of the calendar ---------- */
+  var OFFICE_FINAL = {
+    "US-TX":["Texas", function(d){ return P.prevBiz(P.addDays(d, 6)); }, "Texas: a discharged employee is paid in full within 6 calendar days."],
+    "US-MA":["Massachusetts", function(d){ return d; }, "Massachusetts: a discharged employee is paid in full on the day of discharge."],
+    "US-AZ":["Arizona", function(d){ var a = P.addBiz(d, 7), b = payOnOrAfter(d); return a < b ? a : b; }, "Arizona: a discharged employee is paid within 7 working days or by the end of the next regular pay period, whichever is sooner."],
+    "US-VA":["Virginia", function(d){ return payOnOrAfter(d); }, "Virginia: final wages are due on or before the next regular pay date."]
+  };
+  function payOnOrAfter(d){ var f = d; while(P.dow(f) !== 5) f = P.addDays(f, 1); return P.prevBiz(f) < d ? P.prevBiz(P.addDays(f, 7)) : P.prevBiz(f); }
+  var EVENTS = {
+    hire:["A new hire starts", false, function(d){
+      return [
+        ["US", "Form I-9 completed for the new hire", P.addBiz(d, 3), "USCIS", "Form I-9, Section 2", "Section 2 is completed within 3 business days after the first day of work for pay.", "HR"],
+        ["US", "E-Verify case opened for the new hire", P.addBiz(d, 3), "E-Verify", "E-Verify case", "The case is created no later than the third business day after the employee starts work for pay.", "HR"],
+        ["US", "State new-hire report filed", P.prevBiz(P.addDays(d, 20)), "State directory of new hires", "New-hire report", "Federal law allows up to 20 days from the hire date. Several states set a shorter window, which the state rules matrix carries.", "Payroll"]
+      ];
+    }],
+    term:["An employee is let go", true, function(d, st){
+      var o = OFFICE_FINAL[st];
+      return [
+        [st, "Final paycheck issued", o[1](d), o[0] + " labor agency", "Final wages", o[2] + " The stricter involuntary rule is used.", "Payroll"],
+        ["US", "COBRA election notice sent", P.prevBiz(P.addDays(d, 44)), "Department of Labor", "COBRA election notice", "When the employer administers the plan, the notice goes out within 44 days of the qualifying event.", "HR and Benefits"]
+      ];
+    }],
+    support:["A child support order arrives", false, function(d){
+      var start = payOnOrAfter(P.addDays(P.addBiz(d, 14), 1));
+      return [
+        ["US", "Child support withholding starts", start, "State child support agency", "Income withholding order", "Withholding begins no later than the first pay period after 14 business days from the date on the order.", "Payroll"],
+        ["US", "First child support payment sent", P.addBiz(start, 7), "State disbursement unit", "Income withholding order", "Each payment is sent within 7 business days of the pay date it was withheld from.", "Payroll"]
+      ];
+    }],
+    injury:["A serious workplace injury", false, function(d){
+      return [
+        ["US", "OSHA notified of the hospitalization, amputation or eye loss", P.addDays(d, 1), "OSHA", "Severe injury report", "Reported to OSHA within 24 hours. A fatality is reported within 8 hours.", "HR"],
+        ["US", "Injury entered on the OSHA 300 log", P.addDays(d, 7), "OSHA", "OSHA Form 300", "A recordable case is entered within 7 calendar days.", "HR"]
+      ];
+    }],
+    leave:["A family or medical leave request", false, function(d){
+      return [["US", "FMLA eligibility notice given to the employee", P.addBiz(d, 5), "Department of Labor", "Eligibility and rights notice", "Given within 5 business days of the request.", "HR"]];
+    }]
+  };
+  var evSeq = 0;
+  function logEvent(kind, d, st){
+    var E = EVENTS[kind], id = "EV" + (++evSeq);
+    var list = E[2](d, st).map(function(x, i){
+      return { id:id + "|" + i, ev:id, jur:x[0], level:JUR[x[0]].level, jurName:JUR[x[0]].name, title:x[1], date:x[2], nominal:x[2], moved:false, cat:"notice", agency:x[3], form:x[4],
+        period:E[0] + ", " + P.fmtMDY(d), rule:x[5], owner:x[6], note:"Added by logging an event. In daily use these come straight from the HR and applicant systems.", url:"" };
+    });
+    state.events.push({ id:id, items:list });
+    addLog(E[0] + " on " + P.fmtShort(d) + ": " + list.length + (list.length === 1 ? " date" : " dates") + " added to the calendar");
+    ui = freshUI(); ui.range = "next90"; ui.cat = "notice"; ui.sel = list[0].id;
+    render(); toast(list.length + (list.length === 1 ? " date" : " dates") + " added to the calendar");
+  }
+  function removeEvent(id){ state.events = state.events.filter(function(e){ return e.id !== id; }); ui.sel = null; if($("sheet").open) $("sheet").close(); render(); toast("Event removed"); }
+  function openEventForm(){
+    var dlg = $("recdlg");
+    var kind = h("select", { id:"ev-kind" }, Object.keys(EVENTS).map(function(k){ return h("option", { value:k, text:EVENTS[k][0] }); }));
+    var date = h("input", { id:"ev-date", type:"date", required:true }); date.value = P.iso(TODAY);
+    var st = h("select", { id:"ev-state" }, Object.keys(OFFICE_FINAL).map(function(k){ return h("option", { value:k, text:OFFICE_FINAL[k][0] }); }));
+    var stField = h("label", { class:"field", "for":"ev-state", hidden:true }, "Work state", st);
+    kind.addEventListener("change", function(){ stField.hidden = !EVENTS[kind.value][1]; });
+    swap($("recbody"), [h("form", { class:"recform", onsubmit:function(e){
+        e.preventDefault(); if(!date.value) return;
+        dlg.close(); logEvent(kind.value, new Date(date.value + "T00:00:00Z"), st.value);
+      } },
+      h("h2", { text:"Log an event" }),
+      h("p", { class:"recnote", text:"Some deadlines start when something happens. Pick the event and its date, and the dates it triggers go on the calendar with an owner." }),
+      h("div", { class:"recgrid" }, h("label", { class:"field", "for":"ev-kind" }, "What happened", kind), h("label", { class:"field", "for":"ev-date" }, "When", date), stField),
+      h("div", { class:"recacts" }, h("button", { class:"go", type:"submit" }, "Add the dates"), h("button", { class:"btn", type:"button", onclick:function(){ dlg.close(); } }, "Cancel")))]);
+    if(dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+  }
+
   function clearFilters(){ ui.level = "all"; ui.jur = ""; ui.cat = ""; ui.q = ""; ui.range = "next30"; ui.showAll = false; renderDeadlines(); }
 
   function renderDeadlines(){
@@ -492,39 +609,10 @@
     say("Spreadsheet file downloaded.");
   }
 
-  /* ---------- Jurisdictions ---------- */
-  function renderJurisdictions(){
-    var stats = {}, end = P.addDays(TODAY, 365);
-    items().forEach(function(it){
-      if(!isDeadline(it) || it.date < TODAY || it.date > end) return;
-      var s = stats[it.jur] = stats[it.jur] || { n:0, next:null };
-      s.n++; if(!s.next) s.next = it;
-    });
-    function open(code){ ui.jur = code; ui.level = "all"; ui.cat = ""; ui.q = ""; ui.range = "all"; ui.layout = "list"; ui.showAll = false; ui.sel = null; location.hash = "#deadlines"; renderDeadlines(); window.scrollTo(0, 0); }
-    function card(code, extra){
-      var j = JUR[code], s = stats[code] || { n:0, next:null }, pend = j.pending && !resolved("location");
-      return h("button", { class:"jcard" + (j.office ? " office" : "") + (pend ? " flag" : ""), type:"button", onclick:function(){ open(code); } },
-        h("span", { class:"jtop" }, j.abbr ? h("span", { class:"abbr", text:j.abbr }) : null, h("span", { class:"jn", text:j.name }),
-          pend ? h("span", { class:"pill warn", text:"Setup needed" }) : j.pending ? h("span", { class:"pill ok", text:"Verified" }) : j.office ? h("span", { class:"pill soon", text:"Office" }) : null),
-        extra ? h("span", { class:"jx", text:extra }) : null,
-        h("span", { class:"jm", text:pend ? "Deadlines are added once the accounts are verified" : plural(s.n, "deadline", "deadlines") + " in 12 months" + (s.next ? " \u00b7 next " + P.fmtMD(s.next.date) : "") }));
-    }
-    var by = { federal:[], state:[], local:[], global:[] };
-    Object.keys(JUR).forEach(function(k){ by[JUR[k].level].push(k); });
-    ["state","local","global"].forEach(function(l){ by[l].sort(function(a, b){ return JUR[a].name < JUR[b].name ? -1 : 1; }); });
-    swap($("jbody"), [
-      h("h3", { class:"jh", text:"Federal" }),
-      h("div", { class:"jgrid wide" }, card("US", "IRS, Social Security, Department of Labor, OSHA and CMS: deposits for every payroll run, quarterly and annual returns, year-end forms, benefit plan filings and workforce reports.")),
-      h("h3", { class:"jh" }, "States and DC", h("span", { text:"51 jurisdictions" })),
-      h("div", { class:"jgrid" }, by.state.map(function(k){
-        var j = JUR[k];
-        return card(k, j.office || (j.noTax ? "No state income tax. Unemployment: " + j.ui : (j.whr.charAt(0) === "C" ? "Combined return: " : "Withholding: ") + j.wh));
-      })),
-      h("h3", { class:"jh" }, "Local", h("span", { text:plural(by.local.length, "jurisdiction", "jurisdictions") })),
-      h("div", { class:"jgrid" }, by.local.map(function(k){ return card(k, JUR[k].agency); })),
-      h("h3", { class:"jh" }, "Global", h("span", { text:plural(by.global.length, "sample country", "sample countries") })),
-      h("div", { class:"jgrid" }, by.global.map(function(k){ return card(k, JUR[k].agency); }))
-    ]);
+  /* ---------- Jump from any other tab to one jurisdiction's deadlines ---------- */
+  function openDeadlines(code){
+    ui = freshUI(); ui.jur = code; ui.range = "all";
+    location.hash = "#deadlines"; renderDeadlines(); window.scrollTo(0, 0);
   }
 
   /* ---------- Controls (the original monitor) ---------- */
@@ -655,15 +743,16 @@
 
   function render(){
     cache = null;
-    renderDeadlines(); renderJurisdictions();
+    renderDeadlines(); extra.render.forEach(function(f){ f(); });
     renderTiles(); renderStart(); renderControls(); renderDetail(); renderLog(); renderReport();
   }
 
   /* ---------- Views (one plain #name each) ---------- */
-  var VIEWS = ["deadlines","controls","jurisdictions","monthly-report","first-90-days"];
+  var VIEWS = ["deadlines","pay-runs","tie-out","company-file","notices","clean-up","controls","monthly-report","first-90-days"];
   function showView(){
     var v = (location.hash || "").replace("#", "");
     if(v === "monitor") v = "controls";
+    if(v === "jurisdictions" || v === "accounts") v = "company-file";
     if(VIEWS.indexOf(v) < 0) v = "deadlines";
     VIEWS.forEach(function(name){ $("view-" + name).hidden = name !== v; });
     Array.prototype.forEach.call(document.querySelectorAll(".tab"), function(t){
@@ -687,6 +776,7 @@
   $("layMonth").addEventListener("click", function(){ ui.layout = "month"; renderDeadlines(); });
   $("ics").addEventListener("click", function(){ exportICS(visible(), "deadlines"); });
   $("csv").addEventListener("click", function(){ exportCSV(visible()); });
+  $("logevent").addEventListener("click", openEventForm);
   $("sheetclose").addEventListener("click", function(){ $("sheet").close(); });
   $("sheet").addEventListener("click", function(e){ if(e.target === this) this.close(); });
   if(narrowMQ){
@@ -695,7 +785,7 @@
   }
   /* Reset restores everything: scenarios, activity, filed marks, and every Deadlines filter and layout */
   $("reset").addEventListener("click", function(){
-    state = fresh(); ui = freshUI();
+    state = fresh(); ui = freshUI(); extra.reset();
     clearTimeout(searchTimer);
     if($("sheet").open) $("sheet").close();
     render();
@@ -704,6 +794,9 @@
   });
 
   state = fresh();
+  /* Pay runs, Tie-out, Company file, Notices and Clean-up live in views.js */
+  var extra = P.views({ h:h, $:$, swap:swap, num:num, plural:plural, state:function(){ return state; }, busy:busy, resolved:resolved, render:render, toast:toast, say:say,
+    download:download, openDeadlines:openDeadlines, dates:{ NEXT_FRI:NEXT_FRI, NEXT_PAY:NEXT_PAY, DEP_DUE:DEP_DUE } });
   render();
   showView();
 })();
