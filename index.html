@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Payroll Control Monitor · Catapult Solutions Group concept demo</title>
+<meta name="description" content="Concept demo: every federal, state, local and international payroll deadline in one calendar, each with an owner and saved evidence. Sample data only.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#12122E">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#12122E; --blue:#0277FD; --blue-ink:#0263D9; --teal:#02EAD4;
+    --ink:#1F2733; --muted:#5F6873; --line:#D9DBDC; --page:#F3F3F3; --card:#FFFFFF;
+    --warm-a:#FD898F; --warm-b:#FFC863;
+    --ok:#0B7A53; --ok-bg:#E3F6EE; --ok-line:#BFE8D6; --warn:#8A4B00; --warn-bg:#FFF1D6; --warn-line:#F2B84B;
+    --fed:#0263D9; --fed-bg:#E6F0FE; --st:#067A70; --st-bg:#DDF6F3; --loc:#A14A08; --loc-bg:#FDEBD8; --glo:#6A3FC9; --glo-bg:#EEE8FB;
+    --grad:linear-gradient(90deg,#0277FD 0%,#02EAD4 100%);
+    --warm:linear-gradient(90deg,#FD898F 0%,#FFC863 100%);
+    --display:"Plus Jakarta Sans","Avenir Next","Segoe UI",Helvetica,Arial,sans-serif;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0;}
+  body{font-family:var(--body); font-size:16px; line-height:1.5; color:var(--ink); background:var(--page); -webkit-font-smoothing:antialiased;}
+  h1,h2,h3,p,ol,ul,dl,dd{margin:0; padding:0;}
+  ol,ul{list-style:none;}
+  h1,h2,h3{font-family:var(--display); text-wrap:balance;}
+  a{color:var(--blue-ink);}
+  button,select,input{font:inherit; color:inherit;}
+  :focus-visible{outline:3px solid var(--blue); outline-offset:2px; border-radius:6px;}
+  .wrap{max-width:1240px; margin:0 auto; padding:0 20px;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+
+  /* ---------- Sample-data bar and masthead ---------- */
+  .samplebar{background:#0B0B20; color:#C9CEE6; font-size:13px; padding:8px 0;}
+  .samplebar .wrap{display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;}
+  .samplebar b{color:var(--navy); background:var(--teal); font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:2px 9px; border-radius:20px;}
+  .mast{background:var(--navy); color:#fff; padding:22px 0 0;}
+  .brand{display:flex; flex-wrap:wrap; align-items:center; gap:12px 18px;}
+  .brand img{height:36px; width:auto; display:block;}
+  .brand .bar{width:1px; height:30px; background:rgba(255,255,255,.28);}
+  .brand h1{font-size:21px; font-weight:800; line-height:1.15; letter-spacing:-.005em;}
+  .brand .asof{margin-left:auto; font-size:13.5px; color:#C9CEE6; white-space:nowrap;}
+  .mast .lede{margin-top:14px; color:#C9CEE6; font-size:16.5px; max-width:74ch;}
+  .mastrow{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-top:20px; padding-bottom:18px;}
+  .tabs{display:flex; flex-wrap:wrap; gap:8px;}
+  .tab{font-family:var(--display); font-weight:700; font-size:15px; text-decoration:none; color:#fff; padding:8px 18px; border-radius:20px; border:1.5px solid rgba(255,255,255,.35);}
+  .tab:hover{border-color:#fff;}
+  .tab[aria-current="page"]{background:#fff; color:var(--navy); border-color:#fff;}
+  .ghost{font-family:var(--display); font-weight:700; font-size:14px; cursor:pointer; color:#C9CEE6; background:transparent; border:1.5px solid rgba(255,255,255,.25); border-radius:20px; padding:7px 16px;}
+  .ghost:hover{color:#fff; border-color:#fff;}
+  .rule{height:5px; background:var(--grad);}
+
+  main{padding:24px 0 40px;}
+  .view[hidden]{display:none;}
+  h2{font-size:20px; font-weight:800; line-height:1.2;}
+  .sub{color:var(--muted); font-size:14.5px; margin-top:4px; max-width:78ch;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px;}
+  .hint{color:var(--muted); font-size:14px; margin-top:14px;}
+
+  /* ---------- Pills, level badges, buttons ---------- */
+  .pill{display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 10px; border-radius:20px; white-space:nowrap;
+    color:var(--muted); background:#F0F2F4; border:1px solid #E1E4E7;}
+  .pill.ok{color:var(--ok); background:var(--ok-bg); border-color:var(--ok-line);}
+  .pill.warn{color:var(--warn); background:var(--warn-bg); border-color:var(--warn-line);}
+  .pill.soon{color:var(--blue-ink); background:#E7F1FF; border-color:#BBD7FB;}
+  .pill.info{color:var(--muted); background:transparent; border-style:dashed; border-color:#C4C8CC;}
+  .lv{display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 9px; border-radius:6px; white-space:nowrap;}
+  .lv-federal{color:var(--fed); background:var(--fed-bg);} .lv-state{color:var(--st); background:var(--st-bg);}
+  .lv-local{color:var(--loc); background:var(--loc-bg);} .lv-global{color:var(--glo); background:var(--glo-bg);}
+  .btn{cursor:pointer; font-family:var(--display); font-weight:700; font-size:14px; background:#fff; border:1.5px solid var(--line); border-radius:20px; padding:7px 15px; white-space:nowrap;}
+  .btn:hover{border-color:var(--blue);}
+  .btn:disabled{opacity:.4; cursor:default; border-color:var(--line);}
+  .btn.sq{padding:5px 13px; font-size:18px; line-height:1.2;}
+  .go{cursor:pointer; font-family:var(--display); font-weight:700; font-size:15px; color:#fff; background:var(--blue-ink); border:0; border-radius:20px; padding:10px 18px;}
+  .go:hover{background:#0153BA;}
+
+  /* ---------- Summary tiles ---------- */
+  .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px;}
+  .tile{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; position:relative; overflow:hidden;}
+  .tile::before{content:""; position:absolute; left:0; right:0; top:0; height:4px; background:var(--grad);}
+  .tile.warn::before{background:var(--warm);}
+  .tile .label{font-size:13.5px; color:var(--muted); font-weight:600;}
+  .tile .value{font-family:var(--display); font-weight:800; font-size:32px; line-height:1.15; margin-top:4px; font-variant-numeric:tabular-nums;}
+  .tile .note{font-size:13.5px; color:var(--muted); margin-top:2px;}
+  .tile.warn .note{color:var(--warn); font-weight:600;}
+
+  /* ---------- Deadlines toolbar ---------- */
+  .toolbar{margin-top:18px; display:flex; flex-direction:column; gap:14px;}
+  .levels{display:flex; flex-wrap:wrap; gap:8px;}
+  .lvl{cursor:pointer; display:inline-flex; align-items:center; gap:8px; font-family:var(--display); font-weight:700; font-size:14.5px; background:#fff; border:1.5px solid var(--line); border-radius:20px; padding:7px 14px;}
+  .lvl:hover{border-color:#9DC4FB;}
+  .lvl .dot{width:10px; height:10px; border-radius:50%; background:var(--navy);}
+  .lvl-federal .dot{background:var(--fed);} .lvl-state .dot{background:var(--st);} .lvl-local .dot{background:var(--loc);} .lvl-global .dot{background:var(--glo);}
+  .lvl .c{font-family:var(--body); font-weight:600; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums;}
+  .lvl[aria-pressed="true"]{background:var(--navy); border-color:var(--navy); color:#fff;}
+  .lvl[aria-pressed="true"] .c{color:#C9CEE6;}
+  .lvl[aria-pressed="true"].lvl-all .dot{background:var(--teal);}
+  .filters{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px;}
+  .field{display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);}
+  .field select,.field input{font-size:15px; font-weight:400; letter-spacing:0; text-transform:none; color:var(--ink); background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:8px 10px; min-width:0; width:100%;}
+  .field select:disabled{opacity:.5;}
+  .tools{display:flex; flex-wrap:wrap; align-items:center; gap:10px;}
+  .seg{display:inline-flex; border:1.5px solid var(--line); border-radius:20px; overflow:hidden; background:#fff;}
+  .seg button{cursor:pointer; border:0; background:transparent; font-family:var(--display); font-weight:700; font-size:14px; padding:7px 16px;}
+  .seg button[aria-pressed="true"]{background:var(--navy); color:#fff;}
+  .count{margin-left:auto; font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums;}
+
+  /* ---------- Deadlines list ---------- */
+  .dwork{display:grid; gap:18px; margin-top:18px; align-items:start; grid-template-columns:minmax(0,1fr) 400px;}
+  .mgroup + .mgroup{margin-top:18px;}
+  .mhead{position:sticky; top:0; z-index:2; background:var(--page); padding:8px 2px; font-size:17px; font-weight:800; display:flex; align-items:baseline; justify-content:space-between; gap:12px;}
+  .mhead span{font-family:var(--body); font-size:13.5px; font-weight:600; color:var(--muted); white-space:nowrap;}
+  .rows{background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;}
+  .rows li + li{border-top:1px solid #ECEDEE;}
+  .row{width:100%; text-align:left; cursor:pointer; background:transparent; border:0; border-left:4px solid transparent; padding:10px 14px 10px 10px;
+    display:grid; grid-template-columns:44px minmax(0,1fr) auto auto; gap:12px; align-items:center;}
+  .row:hover{background:#F7FAFF;}
+  .row[aria-pressed="true"]{background:#EEF5FF; border-left-color:var(--blue);}
+  .row.flag{background:#FFFBF1; border-left-color:var(--warn-line);}
+  .row.info .ttl{font-weight:500; color:var(--muted);}
+  .row .dt{display:flex; flex-direction:column; align-items:center; line-height:1.1;}
+  .row .dt b{font-family:var(--display); font-size:20px; font-weight:800; font-variant-numeric:tabular-nums;}
+  .row .dt i{font-style:normal; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);}
+  .row .dt.rep{visibility:hidden;}
+  .row .main{display:flex; flex-direction:column; min-width:0;}
+  .row .ttl{font-weight:600; font-size:15px; line-height:1.3;}
+  .row .sub{font-size:13.5px; color:var(--muted); line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .more{display:block; margin:16px auto 0;}
+  .empty{text-align:center; padding:34px 18px;}
+  .empty h3{font-size:18px;}
+  .empty p{color:var(--muted); margin:6px 0 14px;}
+
+  /* ---------- Month grid ---------- */
+  .cal{padding:14px;}
+  .calhead{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .calhead h3{font-size:18px; font-weight:800; min-width:170px; text-align:center;}
+  .calhead .btn:last-child{margin-left:auto;}
+  .dows{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); text-align:center; margin-bottom:6px;}
+  .grid{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px;}
+  .cell{min-height:78px; border:1.5px solid var(--line); border-radius:10px; background:#fff; padding:6px 7px; display:flex; flex-direction:column; gap:5px; text-align:left; min-width:0;}
+  button.cell{cursor:pointer;}
+  button.cell:hover{border-color:#9DC4FB;}
+  .cell.pad{border:0; background:transparent;}
+  .cell.none{background:#FAFAFB; color:#9AA1A9;}
+  .cell.hol{background:#FAFAFB;}
+  .cell.today{border-color:var(--navy);}
+  .cell.today .dn{background:var(--navy); color:#fff; border-radius:20px; padding:0 7px;}
+  .cell.on{border-color:var(--blue); box-shadow:0 0 0 3px rgba(2,119,253,.16);}
+  .cell.flag{border-color:var(--warn-line); background:#FFFBF1;}
+  .cell .dn{font-family:var(--display); font-weight:700; font-size:14px; align-self:flex-start; font-variant-numeric:tabular-nums;}
+  .cbs{display:flex; flex-wrap:wrap; gap:4px;}
+  .cb{font-size:12px; font-weight:700; border-radius:6px; padding:0 6px; font-variant-numeric:tabular-nums; line-height:1.6;}
+  .hn{font-size:11px; color:var(--muted);}
+
+  /* ---------- Detail panels ---------- */
+  .detail{position:sticky; top:14px; scroll-margin-top:14px; max-height:calc(100vh - 28px); overflow:auto;}
+  .dtop{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+  .detail h2,.sheet h2{font-size:20px;}
+  .ddate{margin-top:8px; font-family:var(--display); font-weight:700; font-size:16px; display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline;}
+  .ddate span{font-family:var(--body); font-weight:400; font-size:14px; color:var(--muted);}
+  .moved{margin-top:6px; font-size:14px; color:var(--warn); background:var(--warn-bg); border-radius:8px; padding:6px 10px;}
+  .dmeta{margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px 16px;}
+  .dmeta dt{font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);}
+  .dmeta dd{font-size:14.5px; overflow-wrap:anywhere;}
+  .blk{margin-top:16px;}
+  .blk h3{font-size:12.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-family:var(--body);}
+  .blk p{margin-top:4px; font-size:15px;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+  .chip{font-size:13px; background:#F0F2F4; border-radius:20px; padding:3px 11px;}
+  .dacts{margin-top:16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  .callout{margin-top:14px; font-size:14.5px; background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:10px; padding:10px 12px;}
+  .ref{margin-top:14px; font-size:13.5px;}
+  .how,.watch{margin-top:10px; display:flex; flex-direction:column; gap:9px; font-size:14.5px;}
+  .how li,.watch li{position:relative; padding-left:16px;}
+  .how li::before,.watch li::before{content:""; position:absolute; left:1px; top:.6em; width:7px; height:7px; border-radius:50%; background:var(--blue);}
+  .watch li::before{background:var(--warm-b);}
+  dialog.sheet{border:0; border-radius:16px 16px 0 0; padding:0; width:100%; max-width:640px; margin:auto auto 0; max-height:86vh;}
+  dialog.sheet::backdrop{background:rgba(18,18,46,.5);}
+  .sheethead{position:sticky; top:0; background:#fff; display:flex; justify-content:flex-end; padding:10px 12px 0;}
+  #sheetbody{padding:4px 18px 22px;}
+
+  /* ---------- Jurisdictions ---------- */
+  .jh{margin-top:22px; font-size:17px; font-weight:800; display:flex; align-items:baseline; gap:10px;}
+  .jh span{font-family:var(--body); font-size:13.5px; font-weight:600; color:var(--muted);}
+  .jgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; margin-top:10px;}
+  .jgrid.wide{grid-template-columns:1fr;}
+  .jcard{text-align:left; cursor:pointer; background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; min-width:0;}
+  .jcard:hover{border-color:var(--blue);}
+  .jcard.office{border-color:#BBD7FB; background:#F7FAFF;}
+  .jcard.flag{border-color:var(--warn-line); background:#FFFBF1;}
+  .jtop{display:flex; align-items:center; gap:8px; min-width:0;}
+  .abbr{font-family:var(--display); font-weight:800; font-size:12.5px; color:#fff; background:var(--navy); border-radius:6px; padding:2px 6px; letter-spacing:.04em;}
+  .jn{font-family:var(--display); font-weight:700; font-size:15.5px; line-height:1.25; min-width:0;}
+  .jtop .pill{margin-left:auto;}
+  .jx{font-size:13.5px; color:var(--ink);}
+  .jm{font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums;}
+
+  /* ---------- Controls ---------- */
+  .work{display:grid; gap:18px; margin-top:18px; align-items:start; grid-template-columns:minmax(0,1fr) 400px; grid-template-areas:"start detail" "controls detail" "log detail";}
+  .start{grid-area:start;} .work > .detail{grid-area:detail;} .controls{grid-area:controls;} .log{grid-area:log;}
+  .start p{margin-top:6px; color:var(--ink); max-width:68ch;}
+  .scns{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-top:14px;}
+  .scn{text-align:left; cursor:pointer; background:#F7FAFF; border:1.5px solid #C9DEFB; border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; transition:border-color .15s ease, background .15s ease;}
+  .scn:hover{border-color:var(--blue); background:#EEF5FF;}
+  .scn .t{font-family:var(--display); font-weight:700; font-size:15px; line-height:1.25;}
+  .scn .s{font-size:13px; font-weight:700; color:var(--blue-ink);}
+  .scn.busy{background:var(--warn-bg); border-color:var(--warn-line);}
+  .scn.busy .s{color:var(--warn);}
+  .scn.done{background:var(--ok-bg); border-color:var(--ok-line);}
+  .scn.done .s{color:var(--ok);}
+  .cgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; margin-top:12px;}
+  .ctl{text-align:left; cursor:pointer; background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:6px; min-height:124px; position:relative; overflow:hidden; transition:border-color .15s ease, box-shadow .15s ease;}
+  .ctl:hover{border-color:#9DC4FB;}
+  .ctl[aria-pressed="true"]{border-color:var(--blue); box-shadow:0 0 0 3px rgba(2,119,253,.16);}
+  .ctl.flag::before{content:""; position:absolute; left:0; right:0; top:0; height:4px; background:var(--warm);}
+  .ctl .n{font-family:var(--display); font-weight:700; font-size:15.5px; line-height:1.25;}
+  .ctl .m{font-size:13.5px; color:var(--muted);}
+  .ctl .pill{margin-top:auto; align-self:flex-start;}
+  .log ol{margin-top:10px; display:flex; flex-direction:column;}
+  .log li{display:flex; gap:12px; justify-content:space-between; padding:9px 0; border-top:1px solid #ECEDEE; font-size:14.5px;}
+  .log li:first-child{border-top:0;}
+  .log li.new{animation:flash 1.2s ease;}
+  @keyframes flash{from{background:#E7F1FF;} to{background:transparent;}}
+  .log .when{color:var(--muted); font-size:13px; white-space:nowrap;}
+  .dhead{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+  .meta{display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:6px; font-size:13.5px; color:var(--muted);}
+  .meta b{color:var(--ink); font-weight:600;}
+  .case{margin-top:16px; border:1.5px solid var(--warn-line); background:#FFFBF1; border-radius:12px; padding:14px; position:relative; overflow:hidden;}
+  .case::before{content:""; position:absolute; left:0; right:0; top:0; height:4px; background:var(--warm);}
+  .case.closed{border-color:var(--ok-line); background:#F4FBF8;}
+  .case.closed::before{background:var(--ok);}
+  .case h3{font-size:16.5px; font-weight:800; line-height:1.25;}
+  .case .why{font-size:14.5px; margin-top:4px;}
+  .case .go{margin-top:12px; width:100%;}
+  .steps{margin-top:12px; display:flex; flex-direction:column; gap:8px;}
+  .step{display:flex; gap:10px; align-items:flex-start; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
+  .step .ck{flex:0 0 auto; width:24px; height:24px; border-radius:50%; border:2px solid #C4C8CC; margin-top:1px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff;}
+  .step.done{border-color:var(--ok-line);}
+  .step.done .ck{background:var(--ok); border-color:var(--ok);}
+  .step.next{border-color:var(--blue);}
+  .step.next .ck{border-color:var(--blue);}
+  .step .st{font-weight:600; font-size:14.5px; line-height:1.3;}
+  .step .sn{font-size:13.5px; color:var(--muted); margin-top:2px;}
+  .step.todo .st{color:var(--muted);}
+  .stamp{margin-top:12px; display:flex; align-items:center; gap:8px; font-family:var(--display); font-weight:800; color:var(--ok);}
+  .stamp span{width:24px; height:24px; border-radius:50%; background:var(--ok); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;}
+
+  /* ---------- Report table ---------- */
+  .tablewrap{overflow-x:auto; margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:14px;}
+  table{border-collapse:collapse; width:100%; min-width:760px; font-size:15px;}
+  th,td{text-align:left; padding:12px 16px; border-top:1px solid #ECEDEE; vertical-align:top;}
+  thead th{border-top:0; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:700; background:#FAFAFB;}
+  td.num{font-variant-numeric:tabular-nums; font-weight:600;}
+  td.ev{color:var(--muted); font-size:14px;}
+  .after{margin-top:12px; font-size:14.5px; color:var(--muted);}
+
+  /* ---------- 90-day plan ---------- */
+  .phases{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-top:14px;}
+  .phase{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; position:relative; overflow:hidden; display:flex; flex-direction:column; gap:10px;}
+  .phase::before{content:""; position:absolute; left:0; right:0; top:0; height:4px; background:var(--grad);}
+  .phase .days{font-size:12.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--blue-ink);}
+  .phase h3{font-size:22px; font-weight:800;}
+  .phase li{position:relative; padding-left:18px; font-size:15px; margin-top:7px;}
+  .phase li::before{content:""; position:absolute; left:2px; top:.62em; width:7px; height:7px; border-radius:50%; background:var(--blue);}
+  .donewhen{margin-top:auto; background:#F1F7FF; border-radius:10px; padding:10px 12px; font-size:14.5px;}
+  .donewhen b{display:block; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--blue-ink);}
+  .yearend{margin-top:14px; border-left:5px solid var(--warm-b); background:var(--card); border-radius:0 12px 12px 0; padding:14px 16px; font-size:15px; max-width:90ch;}
+
+  footer{border-top:1px solid var(--line); padding:18px 0 28px; font-size:13.5px; color:var(--muted);}
+  footer p + p{margin-top:6px;}
+
+  @media (max-width:999px){
+    .dwork{grid-template-columns:minmax(0,1fr);}
+    .dwork > .detail{display:none;}
+    .work{grid-template-columns:minmax(0,1fr); grid-template-areas:"start" "detail" "controls" "log";}
+    .detail{position:static; max-height:none;}
+  }
+  @media (max-width:640px){
+    .brand img{height:30px;}
+    .brand .bar{display:none;}
+    .brand h1{flex-basis:100%; order:3; font-size:19px;}
+    .brand .asof{font-size:12.5px;}
+    .row{grid-template-columns:38px minmax(0,1fr) auto; gap:10px; padding-right:10px;}
+    .row .lv{display:none;}
+    .row .sub{white-space:normal;}
+    .row .pill{font-size:10.5px; padding:2px 7px;}
+    .cell{min-height:58px; padding:4px;}
+    .cb{font-size:11px; padding:0 4px;}
+    .hn{display:none;}
+    .calhead h3{min-width:0; flex:1; font-size:16px;}
+    .count{margin-left:0; flex-basis:100%;}
+    .dmeta{grid-template-columns:1fr;}
+  }
+  @media (max-width:520px){
+    .tiles{grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
+    .tile{padding:14px;}
+    .tile .value{font-size:27px;}
+    .cgrid{grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
+    .ctl{min-height:0; padding:12px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important; scroll-behavior:auto !important;}
+  }
+  @media print{
+    .samplebar,.mastrow,.toolbar,.dwork > .detail,.rule,footer{display:none;}
+    .mast{background:#fff; color:#000; padding:0 0 10px;}
+    .dwork{display:block;}
+    .mhead{position:static;}
+  }
+</style>
+</head>
+<body>
+
+<div class="samplebar"><div class="wrap">
+  <b>Concept demo</b>
+  <span>Sample data only. Prepared for Catapult Solutions Group by Wes Griffin.</span>
+</div></div>
+
+<header class="mast"><div class="wrap">
+  <div class="brand">
+    <img src="assets/catapult-logo-white.png" alt="Catapult Solutions Group" width="604" height="130">
+    <span class="bar" aria-hidden="true"></span>
+    <h1>Payroll Control Monitor</h1>
+    <span class="asof" id="asof"></span>
+  </div>
+  <p class="lede">Every deposit, filing and notice has an owner, a date and saved evidence. The calendar tracks every federal, state, local and international deadline, and the controls show how a problem gets caught and closed.</p>
+  <div class="mastrow">
+    <nav class="tabs" aria-label="Views">
+      <a class="tab" href="#deadlines" data-view="deadlines">Deadlines</a>
+      <a class="tab" href="#controls" data-view="controls">Controls</a>
+      <a class="tab" href="#jurisdictions" data-view="jurisdictions">Jurisdictions</a>
+      <a class="tab" href="#monthly-report" data-view="monthly-report">Monthly report</a>
+      <a class="tab" href="#first-90-days" data-view="first-90-days">First 90 days</a>
+    </nav>
+    <button class="ghost" id="reset" type="button">Reset the demo</button>
+  </div>
+</div></header>
+<div class="rule"></div>
+
+<main><div class="wrap">
+
+  <section class="view" id="view-deadlines">
+    <h2 class="sr">Deadlines</h2>
+    <div class="tiles" id="dtiles"></div>
+    <div class="panel toolbar">
+      <div class="levels" id="levels" role="group" aria-label="Jurisdiction level"></div>
+      <div class="filters">
+        <label class="field">Jurisdiction <select id="fJur"></select></label>
+        <label class="field">Type <select id="fCat"></select></label>
+        <label class="field">When <select id="fRange"></select></label>
+        <label class="field">Search <input id="fSearch" type="search" placeholder="Form, agency or keyword" autocomplete="off"></label>
+      </div>
+      <div class="tools">
+        <div class="seg" role="group" aria-label="Layout">
+          <button type="button" id="layList" aria-pressed="true">List</button>
+          <button type="button" id="layMonth" aria-pressed="false">Month</button>
+        </div>
+        <button class="btn" type="button" id="ics">Add these to my calendar</button>
+        <button class="btn" type="button" id="csv">Export spreadsheet</button>
+        <span class="count" id="count" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="dwork">
+      <div id="dlist"></div>
+      <aside class="panel detail" id="ddetail" aria-label="Deadline detail"></aside>
+    </div>
+  </section>
+
+  <section class="view" id="view-controls" hidden>
+    <div class="tiles" id="tiles"></div>
+    <div class="work">
+      <section class="panel start">
+        <h2>Run a scenario</h2>
+        <p id="startmsg"></p>
+        <div class="scns" id="scns"></div>
+      </section>
+      <aside class="panel detail" id="detail" aria-label="Control detail"></aside>
+      <section class="controls">
+        <h2>Nine controls</h2>
+        <p class="sub">Select a control to see how it fails, how it is controlled and what evidence is kept.</p>
+        <div class="cgrid" id="controls"></div>
+      </section>
+      <section class="panel log">
+        <h2>Activity</h2>
+        <ol id="log"></ol>
+      </section>
+    </div>
+  </section>
+
+  <section class="view" id="view-jurisdictions" hidden>
+    <h2>Where the calendar reaches</h2>
+    <p class="sub">Every jurisdiction with a rule on the calendar. Select one to see its deadlines. Offices come from Catapult's public locations; the local and international footprint is a sample to be replaced by the account register.</p>
+    <div id="jbody"></div>
+  </section>
+
+  <section class="view" id="view-monthly-report" hidden>
+    <h2>What you would see each month</h2>
+    <p class="sub">One page, the same ten lines every month. Each line links to its evidence, so you or your CPA can spot-check it in minutes. The figures follow the calendar and the scenarios you run in Controls.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th scope="col">Measure</th><th scope="col">Target</th><th scope="col">This month (sample)</th><th scope="col">Status</th><th scope="col">Evidence linked</th></tr></thead>
+      <tbody id="report"></tbody>
+    </table></div>
+    <p class="after">Anything off target comes with a cause, a fix and a date.</p>
+  </section>
+
+  <section class="view" id="view-first-90-days" hidden>
+    <h2>First 90 days</h2>
+    <p class="sub">By day 90 every tax account is confirmed in good standing or has a named owner and a date, and the first monthly report is in your hands.</p>
+    <div class="phases">
+      <article class="phase">
+        <div class="days">Days 1 to 30</div>
+        <h3>Verify</h3>
+        <ul>
+          <li>Pull IRS account transcripts and each state's account status.</li>
+          <li>Get the remediation team's findings and confirm every item is closed.</li>
+          <li>Match tax accounts to where people actually work.</li>
+          <li>Confirm the deposit schedule and whether payroll runs cross the $100,000 next-day line.</li>
+        </ul>
+        <div class="donewhen"><b>Done when</b>You have a written status for every federal, state, local and foreign account.</div>
+      </article>
+      <article class="phase">
+        <div class="days">Days 31 to 60</div>
+        <h3>Reconcile</h3>
+        <ul>
+          <li>Tie the payroll register to deposits, filed returns and the general ledger for the year to date.</li>
+          <li>Audit regular-rate and classification setup.</li>
+          <li>Review whether internal and field staff should stay in one run or move to separate pay groups.</li>
+        </ul>
+        <div class="donewhen"><b>Done when</b>Every variance is explained or corrected, with amended returns filed where needed.</div>
+      </article>
+      <article class="phase">
+        <div class="days">Days 61 to 90</div>
+        <h3>Install</h3>
+        <ul>
+          <li>Compliance calendar live, loaded from the verified account register.</li>
+          <li>Second-person review on every run.</li>
+          <li>Notice log in use.</li>
+          <li>Outside quarterly review scheduled.</li>
+        </ul>
+        <div class="donewhen"><b>Done when</b>The first Payroll Health report is in your hands.</div>
+      </article>
+    </div>
+    <p class="yearend">Depending on start date, year-end falls inside this window: fourth-quarter returns, Form 940 and W-2s, including the first required code TT overtime reporting. That is the first test of these controls, and an outside reviewer checks it before filing.</p>
+  </section>
+
+</div></main>
+
+<footer><div class="wrap">
+  <p>Concept demo by Wes Griffin. Every figure, location, status and event shown is sample data and not a Catapult Solutions Group record. The Catapult Solutions Group name and logo belong to Catapult Solutions Group and appear here only to show how the tool would look in their environment.</p>
+  <p>Deadline dates are computed from published agency rules as of November 2026 and are for demonstration. Confirm each date with the agency before filing.</p>
+  <p>Rules referenced:
+    <a href="https://www.irs.gov/taxtopics/tc757">IRS Topic 757, deposit schedules</a> ·
+    <a href="https://www.irs.gov/payments/failure-to-deposit-penalty">IRS Failure to Deposit Penalty</a> ·
+    <a href="https://www.irs.gov/publications/p15">IRS Publication 15</a> ·
+    <a href="https://payroll.org/news-resources/news/news-detail/2026/11/13/california-faces-futa-credit-reduction-for-2026">PayrollOrg, 2026 FUTA credit reduction</a>
+  </p>
+</div></footer>
+
+<dialog class="sheet" id="sheet" aria-label="Deadline detail">
+  <div class="sheethead"><button class="btn" type="button" id="sheetclose">Close</button></div>
+  <div id="sheetbody"></div>
+</dialog>
+
+<div class="sr" id="live" aria-live="polite"></div>
+
+<script src="assets/deadlines.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
